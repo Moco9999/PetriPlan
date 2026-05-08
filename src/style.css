@@ -2,93 +2,96 @@
 @tailwind components;
 @tailwind utilities;
 
-@keyframes heartbeat {
-  0% { transform: scale(1); }
-  14% { transform: scale(1.1); }
-  28% { transform: scale(1); }
-  42% { transform: scale(1.15); }
-  70% { transform: scale(1); }
+@layer base {
+    body {
+        @apply bg-[#050505] text-white selection:bg-primary selection:text-black;
+        font-family: 'Inter', sans-serif;
+        -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, h4, .font-headline {
+        font-family: 'Space Grotesk', sans-serif;
+    }
 }
 
-@keyframes heartbeat-glow {
-  0% { transform: scale(0.8); opacity: 0.3; }
-  14% { transform: scale(1.2); opacity: 0.5; }
-  28% { transform: scale(0.8); opacity: 0.3; }
-  42% { transform: scale(1.3); opacity: 0.6; }
-  70% { transform: scale(0.8); opacity: 0.3; }
+/* SLEEK GLASS EFFECTS */
+.glass-panel {
+    @apply bg-white/[0.02] backdrop-blur-3xl border border-white/5 shadow-2xl;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.heart-beat {
-  animation: heartbeat 2s ease-in-out infinite;
+.glass-panel:hover {
+    @apply bg-white/[0.04] border-white/10;
 }
 
-.heart-beat-glow {
-  animation: heartbeat-glow 2s ease-in-out infinite;
+/* PREMIUM CALENDAR DESIGN */
+.calendar-day-btn {
+    @apply aspect-square flex flex-col items-center justify-center rounded-[2rem] text-sm transition-all duration-300 relative overflow-hidden;
 }
 
-.calendar-day {
-  aspect-ratio: 1/1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 0.75rem;
-  transition: all 0.2s;
-  cursor: pointer;
-  position: relative;
-  font-family: 'Space Grotesk', sans-serif;
+.calendar-day-btn::before {
+    content: '';
+    @apply absolute inset-0 bg-primary opacity-0 transition-opacity duration-300;
 }
 
-.calendar-day:hover:not(.booked) {
-  background: rgba(255,255,255,0.05);
-  border-color: rgba(255,180,172,0.3);
+.calendar-day-btn.selected {
+    @apply bg-primary text-black font-bold scale-105 shadow-[0_0_50px_rgba(255,180,172,0.3)];
 }
 
-.calendar-day.selected {
-  background: rgba(255,180,172,0.1);
-  border-color: #ffb4ac;
-  box-shadow: 0 0 15px rgba(255,180,172,0.2);
+.calendar-day-btn:not(.selected):hover {
+    @apply bg-white/5 scale-[0.98];
 }
 
-.calendar-day.booked {
-  background: #ffb4ac;
-  color: #410003;
-  cursor: not-allowed;
+/* SEGMENTED CONTROL */
+.facility-tab {
+    @apply flex-1 flex flex-col items-center gap-2 p-8 rounded-[3rem] border transition-all duration-500 relative overflow-hidden;
 }
 
-.calendar-day.other-month {
-  opacity: 0.2;
+.facility-tab.active {
+    @apply bg-primary/10 border-primary/40 shadow-[0_0_80px_rgba(255,180,172,0.1)];
 }
 
-.calendar-day .day-num {
-  font-size: 1.25rem;
-  font-weight: 700;
+.facility-tab.active .icon {
+    @apply text-primary scale-110;
 }
 
-.calendar-day .slot-count {
-  font-size: 0.6rem;
-  text-transform: uppercase;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  margin-top: 2px;
+/* TIMELINE EVENTS */
+.calendar-event {
+    @apply bg-primary/20 border-l-4 border-primary p-5 rounded-2xl shadow-lg backdrop-blur-xl animate-in slide-in-from-right-4 duration-500;
 }
 
-/* Custom Scrollbar */
+/* TEXT GLOW */
+.text-glow {
+    text-shadow: 0 0 30px rgba(255,255,255,0.1);
+}
+
+.primary-glow {
+    filter: drop-shadow(0 0 15px rgba(255,180,172,0.4));
+}
+
+/* RESPONSIVE UTILS */
+@media (max-width: 768px) {
+    .glass-panel {
+        @apply rounded-[2.5rem] p-8;
+    }
+}
+
+/* ANIMATIONS */
+.fade-in-smooth {
+    animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* CUSTOM SCROLLBAR */
 ::-webkit-scrollbar {
-  width: 6px;
+    width: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: #0A0A0A;
+    @apply bg-transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #262626;
-  border-radius: 10px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #333;
-}
-
-html {
-  scroll-behavior: smooth;
+    @apply bg-white/10 rounded-full hover:bg-white/20 transition-all;
 }
