@@ -63,17 +63,24 @@ const labData = {
             authors: "Mohan, N., Kumar, V., Kandala, D., C.C. Kartha, Rakesh S. Laishram",
             url: "https://doi.org/10.1016/j.celrep.2018.08.077"
         }
+    ],
+    facilities: [
+        { id: "cell", name: "Cell Culture", icon: "biotech" },
+        { id: "bacterial", name: "Bacterial Culture", icon: "science" },
+        { id: "equipment", name: "Equipment", icon: "settings_suggest", options: ["PCR", "qRT-PCR"] }
     ]
 };
 
 // --- SECURE STATE ---
 const State = {
     user: null,
-    bookings: JSON.parse(localStorage.getItem('petriplan_v5_bookings') || '[]'),
+    bookings: JSON.parse(localStorage.getItem('petriplan_v6_bookings') || '[]'),
     currentMonth: new Date(),
     selectedDate: null,
     selectedStart: null,
     selectedEnd: null,
+    selectedFacility: "cell",
+    selectedSubOption: null,
     isAdmin: false
 };
 
@@ -86,34 +93,19 @@ async function initApp() {
     renderTeam();
     renderPubs();
     
-    // Check initial Supabase session
     if (supabase) {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) console.error("Session fetch error:", error);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) syncUser(session.user);
         
-        if (session) {
-            syncUser(session.user);
-        }
-        
-        // Listen for Auth changes
-        supabase.auth.onAuthStateChange((event, session) => {
-            console.log("Auth Event:", event);
-            if (session) {
-                syncUser(session.user);
-            } else {
-                State.user = null;
-                State.isAdmin = false;
-                updateAuthUI();
-            }
+        supabase.auth.onAuthStateChange((_event, session) => {
+            if (session) syncUser(session.user);
+            else { State.user = null; State.isAdmin = false; updateAuthUI(); }
         });
-
-        // Sync bookings from Supabase if table exists
         fetchBookings();
     }
 
     renderCalendar();
     
-    // Global exposure
     window.navigateTo = navigateTo;
     window.scrollToSection = scrollToSection;
     window.toggleLoginModal = toggleLoginModal;
@@ -124,22 +116,21 @@ async function initApp() {
     window.updateTimes = updateTimes;
     window.finalizeBooking = finalizeBooking;
     window.logout = logout;
+    window.selectFacility = selectFacility;
+    window.selectSubOption = selectSubOption;
 }
 
 async function fetchBookings() {
     if (!supabase) return;
     try {
-        const { data, error } = await supabase.from('bookings').select('*');
-        if (error) throw error;
+        const { data } = await supabase.from('bookings').select('*');
         if (data) {
             State.bookings = data;
-            localStorage.setItem('petriplan_v5_bookings', JSON.stringify(State.bookings));
+            localStorage.setItem('petriplan_v6_bookings', JSON.stringify(State.bookings));
             renderCalendar();
             if (State.selectedDate) renderDayTimeline();
         }
-    } catch (e) {
-        console.warn("Supabase bookings table not found or inaccessible. Falling back to LocalStorage.");
-    }
+    } catch (e) { console.warn("Supabase fetch failed."); }
 }
 
 function syncUser(supabaseUser) {
@@ -147,30 +138,26 @@ function syncUser(supabaseUser) {
     const email = supabaseUser.email;
     const metadata = supabaseUser.user_metadata || {};
     
+    // STRICT ADMIN CONTROL: Only annmaryjoseph@rgcb.res.in
+    const adminEmail = "annmaryjoseph@rgcb.res.in";
+    
     State.user = { 
         name: metadata.full_name || email.split('@')[0], 
         email: email, 
         avatar: metadata.avatar_url || email.charAt(0).toUpperCase(),
-        role: email.includes('admin') ? 'admin' : 'researcher',
+        role: email === adminEmail ? 'admin' : 'researcher',
         id: supabaseUser.id
     };
     State.isAdmin = State.user.role === 'admin';
     updateAuthUI();
 }
 
-// --- NAVIGATION ---
 function navigateTo(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    const target = document.getElementById(`page-${pageId}`);
-    if (target) target.classList.add('active');
-    
+    document.getElementById(`page-${pageId}`).classList.add('active');
     const header = document.getElementById('main-header');
-    if (pageId === 'home') {
-        header.classList.remove('-translate-y-full');
-    } else {
-        header.classList.add('-translate-y-full');
-    }
-    
+    if (pageId === 'home') header.classList.remove('-translate-y-full');
+    else header.classList.add('-translate-y-full');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -179,62 +166,32 @@ function scrollToSection(id) {
     if (el) el.scrollIntoView({ behavior: 'smooth' });
 }
 
-// --- AUTH SYSTEM ---
 function toggleLoginModal() {
-    const modal = document.getElementById('login-modal');
-    modal.classList.toggle('active');
-    document.getElementById('auth-error').classList.add('hidden');
+    document.getElementById('login-modal').classList.toggle('active');
 }
 
 async function handleGoogleLogin() {
-    if (!supabase) {
-        alert("Supabase client not initialized.");
-        return;
-    }
-
+    if (!supabase) { alert("Supabase not initialized."); return; }
     const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: {
-            redirectTo: window.location.origin
-        }
+        options: { redirectTo: window.location.origin + "/PetriPlan/" }
     });
-
-    if (error) {
-        console.error("Auth Error:", error.message);
-        alert("Authentication failed: " + error.message);
-    }
+    if (error) alert(error.message);
 }
 
-async function handleAuthAction(type) {
-    const emailInput = document.getElementById('auth-email');
-    if (!emailInput) return;
-    
-    const email = emailInput.value;
-    const errorEl = document.getElementById('auth-error');
-
-    if (!email.includes('@rgcb.res.in')) {
-        errorEl.classList.remove('hidden');
-        return;
-    }
-    
-    errorEl.classList.add('hidden');
-    
+async function handleAuthAction() {
+    const email = document.getElementById('auth-email').value;
+    if (!email.includes('@rgcb.res.in')) { document.getElementById('auth-error').classList.remove('hidden'); return; }
     if (supabase) {
         const { error } = await supabase.auth.signInWithOtp({ email });
-        if (error) alert("Error: " + error.message);
-        else alert("Institutional magic link sent to " + email);
-    } else {
-        syncUser({ email: email });
-        if (document.getElementById('login-modal').classList.contains('active')) toggleLoginModal();
+        if (error) alert(error.message);
+        else alert("Login link sent to " + email);
     }
 }
 
 async function logout() {
     if (supabase) await supabase.auth.signOut();
-    State.user = null;
-    State.isAdmin = false;
-    updateAuthUI();
-    navigateTo('home');
+    State.user = null; State.isAdmin = false; updateAuthUI(); navigateTo('home');
 }
 
 function updateAuthUI() {
@@ -244,18 +201,14 @@ function updateAuthUI() {
     const adminPanel = document.getElementById('admin-dashboard');
 
     if (State.user) {
-        const avatarHtml = State.user.avatar.length === 1 
-            ? `<div class="w-full h-full bg-primary flex items-center justify-center text-black font-bold">${State.user.avatar}</div>` 
-            : `<img src="${State.user.avatar}" class="w-full h-full object-cover"/>`;
-
         authBox.innerHTML = `
             <div class="flex items-center gap-4 cursor-pointer group" onclick="logout()">
                 <div class="text-right hidden sm:block">
                     <p class="text-xs font-bold text-white group-hover:text-primary transition-all">${State.user.name}</p>
                     <p class="text-[9px] text-primary/50 uppercase tracking-[0.3em]">${State.user.role}</p>
                 </div>
-                <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-white/10 group-hover:border-primary transition-all shadow-lg">
-                    ${avatarHtml}
+                <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-white/10 shadow-lg">
+                    ${State.user.avatar.length === 1 ? `<div class="w-full h-full bg-primary flex items-center justify-center text-black font-bold">${State.user.avatar}</div>` : `<img src="${State.user.avatar}" class="w-full h-full object-cover"/>`}
                 </div>
             </div>
         `;
@@ -263,76 +216,113 @@ function updateAuthUI() {
         if (bookBtn) {
             bookBtn.disabled = false;
             bookBtn.classList.remove('opacity-20', 'cursor-not-allowed', 'bg-white/10', 'text-white/20');
-            bookBtn.classList.add('bg-primary', 'text-black', 'shadow-xl');
+            bookBtn.classList.add('bg-primary', 'text-black');
         }
-        if (State.isAdmin && adminPanel) {
-            adminPanel.classList.remove('hidden');
-            renderAdminList();
-        } else if (adminPanel) adminPanel.classList.add('hidden');
+        if (State.isAdmin && adminPanel) adminPanel.classList.remove('hidden');
+        else if (adminPanel) adminPanel.classList.add('hidden');
     } else {
-        authBox.innerHTML = `<button onclick="toggleLoginModal()" class="px-6 py-2.5 bg-white/5 border border-white/10 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-all hover:border-primary/50">Access Portal</button>`;
+        authBox.innerHTML = `<button onclick="toggleLoginModal()" class="px-6 py-2.5 bg-white/5 border border-white/10 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white/10">Signin</button>`;
         if (bookStatus) bookStatus.innerHTML = `Login to continue`;
-        if (bookBtn) {
-            bookBtn.disabled = true;
-            bookBtn.classList.add('opacity-20', 'cursor-not-allowed', 'bg-white/10', 'text-white/20');
-            bookBtn.classList.remove('bg-primary', 'text-black');
-        }
-        if (adminPanel) adminPanel.classList.add('hidden');
+        if (bookBtn) { bookBtn.disabled = true; bookBtn.classList.add('opacity-20'); }
     }
 }
 
-// --- CALENDAR ENGINE ---
-function changeMonth(delta) {
-    State.currentMonth.setMonth(State.currentMonth.getMonth() + delta);
-    renderCalendar();
+function renderPubs() {
+    const grid = document.getElementById('pub-grid');
+    if (!grid) return;
+    grid.innerHTML = labData.publications.map(p => `
+        <a href="${p.url}" target="_blank" class="block p-8 glass-panel rounded-[2.5rem] border border-white/5 hover:border-primary/30 transition-all group shadow-sm">
+            <div class="flex justify-between items-start gap-8">
+                <div class="space-y-4">
+                    <h4 class="font-headline text-2xl font-bold text-white group-hover:text-primary transition-all leading-snug">${p.title}</h4>
+                    <p class="text-sm text-white/40 italic font-light">${p.authors}</p>
+                    <p class="text-[10px] text-primary font-bold uppercase tracking-[0.3em]">${p.journal}</p>
+                </div>
+                <div class="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-white/20 group-hover:text-primary transition-all shrink-0">
+                    <span class="material-symbols-outlined text-sm">north_east</span>
+                </div>
+            </div>
+        </a>
+    `).join('') + `
+        <div class="pt-12 text-center">
+            <a href="https://rgcb.res.in/documents/publication/Rakesh_Laishram_Publication_list.pdf" target="_blank" class="inline-flex items-center gap-3 px-10 py-4 bg-white/5 border border-white/10 rounded-2xl text-white hover:bg-primary hover:text-black transition-all font-bold text-lg group">
+                See Full Publication List
+                <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">east</span>
+            </a>
+        </div>
+    `;
 }
 
+function selectFacility(id) {
+    State.selectedFacility = id;
+    State.selectedSubOption = null;
+    renderFacilitySelector();
+    updateTimes();
+}
+
+function selectSubOption(opt) {
+    State.selectedSubOption = opt;
+    renderFacilitySelector();
+    updateTimes();
+}
+
+function renderFacilitySelector() {
+    const container = document.getElementById('facility-selector');
+    if (!container) return;
+    
+    container.innerHTML = labData.facilities.map(f => `
+        <button onclick="selectFacility('${f.id}')" class="flex-1 flex flex-col items-center gap-3 p-6 rounded-[2.5rem] border transition-all ${State.selectedFacility === f.id ? 'bg-primary/20 border-primary shadow-xl shadow-primary/10' : 'bg-white/5 border-white/5 hover:bg-white/10'}">
+            <span class="material-symbols-outlined text-3xl ${State.selectedFacility === f.id ? 'text-primary' : 'text-white/20'}">${f.icon}</span>
+            <span class="text-[11px] font-bold uppercase tracking-widest ${State.selectedFacility === f.id ? 'text-white' : 'text-white/40'}">${f.name}</span>
+        </button>
+    `).join('');
+
+    const sub = document.getElementById('facility-sub-options');
+    const activeFac = labData.facilities.find(f => f.id === State.selectedFacility);
+    if (activeFac && activeFac.options) {
+        sub.classList.remove('hidden');
+        sub.innerHTML = `
+            <div class="flex gap-4 mt-8">
+                ${activeFac.options.map(opt => `
+                    <button onclick="selectSubOption('${opt}')" class="px-8 py-3 rounded-2xl border text-xs font-bold transition-all ${State.selectedSubOption === opt ? 'bg-primary text-black border-primary' : 'bg-white/5 border-white/10 text-white/40 hover:text-white'}">
+                        ${opt}
+                    </button>
+                `).join('')}
+            </div>
+        `;
+    } else {
+        sub.classList.add('hidden');
+    }
+}
+
+// --- CALENDAR & BOOKING (SAME AS BEFORE BUT WITH FACILITY CONTEXT) ---
 function renderCalendar() {
     const grid = document.getElementById('calendar-view');
     const label = document.getElementById('month-label');
     if (!grid) return;
     grid.innerHTML = '';
-    
     const year = State.currentMonth.getFullYear();
     const month = State.currentMonth.getMonth();
     label.innerText = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(State.currentMonth);
-
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach(d => {
-        grid.innerHTML += `<div class="text-[11px] font-bold text-white/20 pb-6 uppercase tracking-widest">${d}</div>`;
-    });
-
+    ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach(d => grid.innerHTML += `<div class="text-[11px] font-bold text-white/20 pb-6 uppercase tracking-widest">${d}</div>`);
     for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div></div>`;
-
     for (let i = 1; i <= daysInMonth; i++) {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
         const isSelected = State.selectedDate === dateStr;
         const dayBookings = State.bookings.filter(b => b.date === dateStr);
-        
-        grid.innerHTML += `
-            <button onclick="selectDate('${dateStr}')" class="aspect-square flex flex-col items-center justify-center rounded-[1.8rem] text-base transition-all
-                ${isSelected ? 'bg-primary text-black font-bold scale-110 shadow-2xl shadow-primary/30' : 'hover:bg-white/5 text-white/40'}">
-                ${i}
-                <div class="flex gap-1 mt-1">
-                    ${dayBookings.map(b => `<div class="w-1 h-1 rounded-full ${b.user === State.user?.email ? 'bg-primary' : 'bg-white/20'}"></div>`).join('')}
-                </div>
-            </button>
-        `;
+        grid.innerHTML += `<button onclick="selectDate('${dateStr}')" class="aspect-square flex flex-col items-center justify-center rounded-[1.8rem] text-base transition-all ${isSelected ? 'bg-primary text-black font-bold scale-110 shadow-2xl shadow-primary/30' : 'hover:bg-white/5 text-white/40'}">${i}<div class="flex gap-1 mt-1">${dayBookings.map(b => `<div class="w-1 h-1 rounded-full ${b.user === State.user?.email ? 'bg-primary' : 'bg-white/20'}"></div>`).join('')}</div></button>`;
     }
 }
 
 function selectDate(date) {
     State.selectedDate = date;
-    const container = document.getElementById('day-detail-container');
-    if (container) container.classList.remove('hidden');
-    
-    const label = document.getElementById('detail-date-label');
-    if (label) label.innerText = new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-    
+    document.getElementById('day-detail-container').classList.remove('hidden');
+    document.getElementById('detail-date-label').innerText = new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
     renderCalendar();
     renderDayTimeline();
+    renderFacilitySelector();
 }
 
 function renderDayTimeline() {
@@ -340,7 +330,6 @@ function renderDayTimeline() {
     if (!list) return;
     const dayBookings = State.bookings.filter(b => b.date === State.selectedDate);
     list.innerHTML = '';
-    
     for (let h = 8; h <= 20; h++) {
         list.innerHTML += `
             <div class="flex gap-6 items-center min-h-[4rem] group">
@@ -350,12 +339,7 @@ function renderDayTimeline() {
                         if (Math.floor(b.start / 60) === h) {
                             const topOffset = (b.start % 60) * (4 / 60); 
                             const height = (parseFloat(b.duration) * 4);
-                            return `
-                                <div class="absolute inset-x-0 rounded-2xl calendar-event z-10 p-4" style="top: ${topOffset - 1}rem; height: ${height}rem">
-                                    <p class="text-[10px] font-bold text-white truncate">${b.user === State.user?.email ? 'Your Session' : 'Reserved'}</p>
-                                    <p class="text-[9px] text-primary/60 font-mono">${b.startStr} - ${b.endStr}</p>
-                                </div>
-                            `;
+                            return `<div class="absolute inset-x-0 rounded-2xl calendar-event z-10 p-4" style="top: ${topOffset - 1}rem; height: ${height}rem"><p class="text-[10px] font-bold text-white truncate">${b.facility_name || 'Reserved'}</p><p class="text-[9px] text-primary/60 font-mono">${b.startStr} - ${b.endStr}</p></div>`;
                         }
                         return '';
                     }).join('')}
@@ -369,24 +353,26 @@ function updateTimes() {
     const startPick = document.getElementById('start-time-pick');
     const endPick = document.getElementById('end-time-pick');
     if (!startPick || !endPick) return;
-
     const startStr = startPick.value;
     const endStr = endPick.value;
-    
     if (!startStr || !endStr) return;
-
     const [startH, startM] = startStr.split(':').map(Number);
     const [endH, endM] = endStr.split(':').map(Number);
-    
     const startTotal = startH * 60 + startM;
     const endTotal = endH * 60 + endM;
-    
     State.selectedStart = startTotal;
     State.selectedEnd = endTotal;
-    
     const summary = document.getElementById('booking-summary');
     const text = document.getElementById('summary-text');
     const btn = document.getElementById('confirm-booking-btn');
+
+    const activeFac = labData.facilities.find(f => f.id === State.selectedFacility);
+    if (activeFac.options && !State.selectedSubOption) {
+        summary.classList.remove('hidden');
+        text.innerHTML = `<span class="text-primary">Select Equipment Sub-type</span>`;
+        btn.disabled = true;
+        return;
+    }
 
     if (endTotal <= startTotal) {
         summary.classList.remove('hidden');
@@ -397,9 +383,8 @@ function updateTimes() {
 
     const durationMin = endTotal - startTotal;
     const durationH = (durationMin / 60).toFixed(1);
-
     const isConflict = State.bookings.some(b => {
-        if (b.date !== State.selectedDate) return false;
+        if (b.date !== State.selectedDate || b.facility_id !== State.selectedFacility) return false;
         return (startTotal < b.end && endTotal > b.start);
     });
 
@@ -408,17 +393,19 @@ function updateTimes() {
         text.innerHTML = `<span class="text-red-500 text-lg">Timeline Overlap Detected</span>`;
         btn.disabled = true;
     } else {
-        text.innerText = `${startStr} - ${endStr} for ${durationH} Hours`;
+        const facName = activeFac.name + (State.selectedSubOption ? ` (${State.selectedSubOption})` : "");
+        text.innerText = `${facName}: ${startStr} - ${endStr}`;
         btn.disabled = !State.user;
     }
 }
 
 async function finalizeBooking() {
     if (!State.user) return toggleLoginModal();
-    
     const startStr = document.getElementById('start-time-pick').value;
     const endStr = document.getElementById('end-time-pick').value;
     const durationH = ((State.selectedEnd - State.selectedStart) / 60).toFixed(1);
+    const activeFac = labData.facilities.find(f => f.id === State.selectedFacility);
+    const facName = activeFac.name + (State.selectedSubOption ? ` (${State.selectedSubOption})` : "");
 
     const booking = { 
         date: State.selectedDate, 
@@ -428,33 +415,28 @@ async function finalizeBooking() {
         endStr: endStr,
         duration: durationH,
         user: State.user.email,
-        user_id: State.user.id || null
+        user_id: State.user.id,
+        facility_id: State.selectedFacility,
+        facility_name: facName
     };
 
-    // Optimistic Update
     State.bookings.push(booking);
-    localStorage.setItem('petriplan_v5_bookings', JSON.stringify(State.bookings));
-
-    // Supabase Persistence
     if (supabase) {
         const { error } = await supabase.from('bookings').insert([booking]);
-        if (error) console.error("Supabase Save Error:", error.message);
+        if (error) console.error(error.message);
     }
     
     const btn = document.getElementById('confirm-booking-btn');
     btn.innerText = "Confirmed!";
     btn.classList.replace('bg-primary', 'bg-green-500');
-    
     setTimeout(() => {
         btn.innerText = "Confirm Session";
         btn.classList.replace('bg-green-500', 'bg-primary');
-        renderCalendar();
-        renderDayTimeline();
-        if (State.isAdmin) renderAdminList();
+        renderCalendar(); renderDayTimeline();
     }, 800);
 }
 
-// --- RENDERING TEAMS & PUBS ---
+// --- TEAM RENDER ---
 function renderTeam() {
     const grid = document.getElementById('team-grid');
     if (!grid) return;
@@ -473,58 +455,3 @@ function renderTeam() {
         </div>
     `).join('');
 }
-
-function renderPubs() {
-    const grid = document.getElementById('pub-grid');
-    if (!grid) return;
-    grid.innerHTML = labData.publications.map(p => `
-        <a href="${p.url}" target="_blank" class="block p-8 glass-panel rounded-[2.5rem] border border-white/5 hover:border-primary/30 hover:bg-white/[0.03] transition-all group shadow-sm">
-            <div class="flex justify-between items-start gap-8">
-                <div class="space-y-4">
-                    <h4 class="font-headline text-2xl font-bold text-white group-hover:text-primary transition-all leading-snug">${p.title}</h4>
-                    <p class="text-sm text-white/40 italic font-light">${p.authors}</p>
-                    <p class="text-[10px] text-primary font-bold uppercase tracking-[0.3em]">${p.journal}</p>
-                </div>
-                <div class="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-white/20 group-hover:text-primary group-hover:border-primary transition-all shrink-0">
-                    <span class="material-symbols-outlined text-sm">north_east</span>
-                </div>
-            </div>
-        </a>
-    `).join('');
-}
-
-// --- ADMIN CONTROL ---
-function renderAdminList() {
-    const list = document.getElementById('admin-booking-list');
-    if (!list) return;
-    list.innerHTML = State.bookings.slice(-10).reverse().map(b => `
-        <div class="p-4 bg-white/[0.02] border border-white/5 rounded-2xl flex justify-between items-center group">
-            <div class="space-y-1">
-                <p class="text-xs font-bold text-white/90">${b.user.split('@')[0]}</p>
-                <p class="text-[9px] text-white/40 font-mono">${b.date} • ${b.startStr} - ${b.endStr}</p>
-            </div>
-            <button onclick="deleteBooking('${b.date}', ${b.start})" class="opacity-0 group-hover:opacity-100 p-2 hover:text-red-500 transition-all">
-                <span class="material-symbols-outlined text-sm">delete</span>
-            </button>
-        </div>
-    `).join('');
-}
-
-async function deleteBooking(date, start) {
-    if (!State.isAdmin) return;
-    
-    // Optimistic
-    State.bookings = State.bookings.filter(b => !(b.date === date && b.start === start));
-    localStorage.setItem('petriplan_v5_bookings', JSON.stringify(State.bookings));
-    
-    // Supabase
-    if (supabase) {
-        const { error } = await supabase.from('bookings').delete().match({ date, start });
-        if (error) console.error("Supabase Delete Error:", error.message);
-    }
-
-    renderAdminList();
-    renderCalendar();
-    if (State.selectedDate === date) renderDayTimeline();
-}
-window.deleteBooking = deleteBooking;
