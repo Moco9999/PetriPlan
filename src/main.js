@@ -172,9 +172,10 @@ function toggleLoginModal() {
 
 async function handleGoogleLogin() {
     if (!supabase) { alert("Supabase not initialized."); return; }
+    const redirectUrl = window.location.origin + window.location.pathname;
     const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: window.location.origin + "/PetriPlan/" }
+        options: { redirectTo: redirectUrl }
     });
     if (error) alert(error.message);
 }
@@ -183,9 +184,13 @@ async function handleAuthAction() {
     const email = document.getElementById('auth-email').value;
     if (!email.includes('@rgcb.res.in')) { document.getElementById('auth-error').classList.remove('hidden'); return; }
     if (supabase) {
-        const { error } = await supabase.auth.signInWithOtp({ email });
+        const redirectUrl = window.location.origin + window.location.pathname;
+        const { error } = await supabase.auth.signInWithOtp({ 
+            email,
+            options: { emailRedirectTo: redirectUrl }
+        });
         if (error) alert(error.message);
-        else alert("Login link sent to " + email);
+        else alert("Login link sent to " + email + ". Check your inbox!");
     }
 }
 
