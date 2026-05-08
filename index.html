@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>PetriPlan | Cardiovascular RNA Biology Division</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface": "#010101",
+                        "surface-variant": "#050505",
+                        "primary": "#ffb4ac",
+                        "primary-container": "#b22222",
+                        "on-primary-container": "#ffc8c2",
+                        "outline": "#aa8986",
+                        "background": "#010101",
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .glass-panel {
+            background: rgba(8, 8, 8, 0.85);
+            backdrop-filter: blur(50px);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .heart-beat {
+            animation: heartbeat 3s ease-in-out infinite;
+        }
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 30px rgba(178, 34, 34, 0.1)); }
+            15% { transform: scale(1.02); filter: drop-shadow(0 0 50px rgba(178, 34, 34, 0.25)); }
+            30% { transform: scale(1); filter: drop-shadow(0 0 30px rgba(178, 34, 34, 0.1)); }
+            45% { transform: scale(1.04); filter: drop-shadow(0 0 70px rgba(178, 34, 34, 0.4)); }
+            60% { transform: scale(1); filter: drop-shadow(0 0 30px rgba(178, 34, 34, 0.1)); }
+        }
+        body {
+            background-color: #010101;
+            color: #e5e2e1;
+            scroll-behavior: smooth;
+        }
+        .page { display: none; }
+        .page.active { display: block; }
+        #login-modal { display: none; }
+        #login-modal.active { display: flex; }
+        .text-glow {
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .calendar-event {
+            border-left-width: 4px;
+            background: rgba(255, 180, 172, 0.1);
+            border-color: #ffb4ac;
+        }
+
+        #auth-redirect {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: black;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        #auth-redirect.active { display: flex; }
+
+        /* TRANSPARENT LOGO FIX (Screen blends black background out) */
+        .transparent-logo {
+            mix-blend-mode: screen; 
+            filter: brightness(1.2) contrast(1.1);
+        }
+        
+        /* Smooth Fade Transitions */
+        .fade-in-smooth {
+            animation: fadeInSmooth 0.8s ease-out;
+        }
+        @keyframes fadeInSmooth {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="font-body text-sm overflow-x-hidden">
+    <!-- Google Account Selector Mock -->
+    <div id="google-selector" class="fixed inset-0 z-[150] hidden items-center justify-center bg-black/90 backdrop-blur-3xl">
+        <div class="glass-panel w-full max-w-sm p-10 rounded-[3rem] space-y-10 border-white/10">
+            <div class="text-center">
+                <img src="https://www.google.com/favicon.ico" class="w-12 h-12 mx-auto mb-6"/>
+                <h3 class="text-xl font-bold text-white">Choose an account</h3>
+                <p class="text-white/40 text-xs mt-2">to continue to PetriPlan</p>
+            </div>
+            <div class="space-y-4">
+                <div onclick="finalizeMockAuth('staff@rgcb.res.in', 'Dr. Researcher')" class="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-4 cursor-pointer hover:bg-white/10 transition-all">
+                    <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-black font-bold">R</div>
+                    <div>
+                        <p class="text-sm font-bold text-white">Dr. Researcher</p>
+                        <p class="text-[10px] text-white/40">staff@rgcb.res.in</p>
+                    </div>
+                </div>
+                <div onclick="finalizeMockAuth('admin@rgcb.res.in', 'Division Admin')" class="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-4 cursor-pointer hover:bg-white/10 transition-all">
+                    <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold">A</div>
+                    <div>
+                        <p class="text-sm font-bold text-white">Division Admin</p>
+                        <p class="text-[10px] text-white/40">admin@rgcb.res.in</p>
+                    </div>
+                </div>
+                <div class="text-center pt-4">
+                    <button onclick="closeGoogleSelector()" class="text-xs text-primary/60 hover:text-primary underline">Use another account</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Redirect Screen -->
+    <div id="auth-redirect">
+        <div class="flex flex-col items-center gap-8">
+            <img src="https://www.google.com/favicon.ico" class="w-16 h-16 animate-pulse"/>
+            <div class="text-center space-y-2">
+                <h3 class="text-2xl font-bold text-white">Authenticating...</h3>
+                <p class="text-white/40 text-sm">Verifying institutional credentials</p>
+            </div>
+            <div class="w-48 h-1 bg-white/10 rounded-full overflow-hidden">
+                <div class="h-full bg-primary animate-[loading_1.5s_ease-in-out_infinite]" style="width: 30%"></div>
+            </div>
+        </div>
+    </div>
+    <style>@keyframes loading { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }</style>
+
+    <!-- Header -->
+    <header id="main-header" class="fixed top-0 z-[60] w-full h-24 px-10 flex justify-between items-center bg-surface/30 backdrop-blur-3xl border-b border-white/5 transition-all duration-500">
+        <div class="flex items-center gap-6">
+            <img src="/PetriPlan.Transparentlogo.png" class="h-16 w-auto" alt="PetriPlan Logo"/>
+            <div class="hidden sm:block">
+                <h1 class="font-headline text-3xl font-bold tracking-tighter text-white">PetriPlan</h1>
+                <p class="text-[9px] text-primary font-bold uppercase tracking-[0.4em]">Cardiovascular RNA Biology</p>
+            </div>
+        </div>
+        <div id="header-auth" class="flex items-center gap-6">
+            <!-- Injected by JS -->
+        </div>
+    </header>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 z-[100] items-center justify-center px-6">
+        <div class="absolute inset-0 bg-black/98 backdrop-blur-2xl" onclick="toggleLoginModal()"></div>
+        <div class="glass-panel w-full max-w-md p-12 rounded-[3.5rem] relative z-10 space-y-12 border-white/10 shadow-[0_0_150px_rgba(0,0,0,1)]">
+            <div class="text-center">
+                <img src="/PetriPlan.Transparentlogo.png" class="h-20 mx-auto mb-10" alt=""/>
+                <h3 class="font-headline text-5xl font-bold text-white tracking-tighter">Signin</h3>
+            </div>
+            <div class="space-y-4">
+                <button onclick="openGoogleSelector()" class="w-full flex items-center justify-center gap-4 py-5 bg-white text-black rounded-[2rem] font-bold hover:scale-[0.98] transition-all shadow-xl">
+                    <img src="https://www.google.com/favicon.ico" class="w-6 h-6"/>
+                    Continue with Google
+                </button>
+                <div class="relative py-8">
+                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-white/5"></div></div>
+                    <div class="relative flex justify-center text-[10px] uppercase tracking-widest"><span class="bg-[#050505] px-6 text-white/20">or</span></div>
+                </div>
+                <div class="space-y-5">
+                    <div class="relative">
+                        <input id="auth-email" type="email" placeholder="researcher@rgcb.res.in" class="w-full bg-white/[0.03] border border-white/10 rounded-[2rem] px-8 py-5 outline-none focus:border-primary transition-all text-white text-lg"/>
+                        <p id="auth-error" class="hidden absolute top-full left-6 mt-2 text-[10px] text-red-500 font-bold uppercase tracking-widest animate-pulse">Use institutional ID to continue.</p>
+                    </div>
+                    <button onclick="handleAuthAction('email')" class="w-full py-5 bg-primary text-black font-bold rounded-[2rem] hover:shadow-[0_0_40px_rgba(255,180,172,0.4)] transition-all text-xl">Signin</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main class="min-h-screen">
+        <!-- HOME PAGE -->
+        <section id="page-home" class="page active">
+            <div class="relative h-screen flex items-center justify-center px-8 overflow-hidden">
+                <div class="absolute inset-0 opacity-5 pointer-events-none" style="background-image: radial-gradient(#ffb4ac 1px, transparent 1px); background-size: 50px 50px;"></div>
+                <div class="absolute inset-0 flex items-center justify-center z-0">
+                    <img src="https://png.pngtree.com/png-vector/20250104/ourmid/pngtree-anatomically-detailed-human-heart-model-showcasing-the-beauty-of-biological-design-png-image_15044474.png" 
+                         class="h-[75vh] md:h-[90vh] w-auto object-contain heart-beat opacity-50 filter drop-shadow-[0_0_60px_rgba(178,34,34,0.3)]" alt="Heart"/>
+                </div>
+                <div class="relative z-10 text-center space-y-12 max-w-6xl">
+                    <div class="inline-flex items-center gap-5 px-8 py-2.5 rounded-full bg-primary-container/10 border border-primary/20 text-primary font-mono text-[11px] tracking-[0.6em] uppercase backdrop-blur-sm">
+                        Research Infrastructure Hub
+                    </div>
+                    <h2 class="font-headline text-8xl md:text-[12rem] font-bold tracking-tighter text-white leading-none text-glow">
+                        Pulse of <br/><span class="text-primary italic">Life.</span>
+                    </h2>
+                    <p class="text-white/60 text-2xl md:text-3xl max-w-4xl mx-auto leading-relaxed font-light text-glow">
+                        Digital management for high-precision RNA research <br class="hidden md:block"/>at the Cardiovascular RNA Biology Division.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-8 justify-center pt-14 pb-24">
+                        <button onclick="navigateTo('booking')" class="bg-primary text-black font-headline text-2xl px-20 py-7 rounded-[2.5rem] hover:scale-105 transition-all shadow-xl font-bold">
+                            Book Lab Slot
+                        </button>
+                        <!-- EXPLORE RESEARCH -->
+                        <button onclick="scrollToSection('pub-section')" class="px-20 py-7 border border-white/10 bg-white/5 text-white font-headline text-2xl rounded-[2.5rem] hover:bg-white/10 transition-all font-medium backdrop-blur-md">
+                            Explore Research
+                        </button>
+                    </div>
+                </div>
+                <div class="absolute bottom-16 left-1/2 -translate-x-1/2 opacity-20 animate-bounce">
+                    <span class="material-symbols-outlined text-4xl">expand_more</span>
+                </div>
+            </div>
+
+            <!-- PI Section -->
+            <section id="team-section" class="py-48 px-10 max-w-7xl mx-auto border-b border-white/5">
+                <div class="relative glass-panel rounded-[3.5rem] p-12 md:p-16 overflow-hidden border-white/5 group shadow-2xl max-w-5xl mx-auto">
+                    <div class="flex flex-col md:flex-row gap-16 items-center relative z-10">
+                        <div class="relative shrink-0">
+                            <div class="absolute inset-0 bg-primary/20 blur-[50px] rounded-full opacity-30 group-hover:opacity-50 transition-opacity"></div>
+                            <div class="w-56 h-56 md:w-72 md:h-72 rounded-[3.5rem] border-4 border-white/10 overflow-hidden shadow-2xl relative z-10 bg-surface">
+                                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTv32toqqsIiEAbFe_LeClYqTm0JNgZAoqXHie2-kSl5VclXLZuj3G-r79r2QFgtJiWOPac&s" 
+                                     class="w-full h-full object-cover object-top scale-110" alt="Dr. Rakesh S. Laishram"/>
+                            </div>
+                        </div>
+                        <div class="space-y-8 text-center md:text-left flex-1">
+                            <div class="space-y-3">
+                                <div class="flex flex-wrap justify-center md:justify-start gap-4">
+                                    <span class="px-4 py-1.5 bg-primary text-black text-xs font-bold rounded-full uppercase tracking-widest">Principal Investigator</span>
+                                    <span class="px-4 py-1.5 bg-white/5 border border-white/10 text-white/40 text-xs font-bold rounded-full uppercase tracking-widest">FNASc</span>
+                                </div>
+                                <h3 class="font-headline text-5xl md:text-6xl font-bold text-white tracking-tight leading-tight">Dr. Rakesh S. Laishram</h3>
+                                <p class="text-primary font-headline text-xl md:text-2xl font-medium tracking-tight">Scientist F • Swarna Jayanti Fellow</p>
+                            </div>
+                            <p class="text-xl text-white/40 leading-relaxed max-w-2xl font-light italic">
+                                "Deciphering the molecular code of RNA to restore heart health."
+                            </p>
+                            <div class="flex flex-wrap justify-center md:justify-start gap-12 pt-4">
+                                <div class="space-y-2">
+                                    <p class="text-[10px] font-bold text-white/20 uppercase tracking-[0.5em]">Division</p>
+                                    <p class="text-white font-medium text-lg italic">Cardiovascular RNA Biology</p>
+                                </div>
+                                <div class="space-y-2">
+                                    <p class="text-[10px] font-bold text-white/20 uppercase tracking-[0.5em]">Location</p>
+                                    <p class="text-white font-medium text-lg">Unit A-12, RGCB</p>
+                                </div>
+                                <a href="https://rgcb.res.in/rakesh" target="_blank" class="flex items-center gap-3 text-primary font-bold hover:underline self-center md:self-end text-lg">
+                                    Biography <span class="material-symbols-outlined text-sm">open_in_new</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Team Grid -->
+                <div class="mt-48 space-y-24">
+                    <div class="text-center space-y-4">
+                        <h3 class="font-headline text-6xl font-bold text-white">Laboratory Team</h3>
+                        <p class="text-white/40 text-2xl font-light">Scientists driving molecular discoveries</p>
+                    </div>
+                    <div id="team-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+                        <!-- Dynamic -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Publications -->
+            <section id="pub-section" class="py-48 bg-white/[0.01]">
+                <div class="max-w-7xl mx-auto px-12">
+                    <div class="flex justify-between items-end mb-32">
+                        <div class="space-y-4">
+                            <h3 class="font-headline text-7xl font-bold text-white">Publications</h3>
+                            <p class="text-white/40 text-2xl italic font-light">High-impact research findings</p>
+                        </div>
+                        <span class="text-primary font-mono text-base uppercase tracking-widest border-b-2 border-primary/20 pb-4">2018—2025</span>
+                    </div>
+                    <div id="pub-grid" class="grid grid-cols-1 gap-8">
+                        <!-- Dynamic -->
+                    </div>
+                </div>
+            </section>
+        </section>
+
+        <!-- BOOKING PAGE -->
+        <section id="page-booking" class="page px-12 py-48 max-w-7xl mx-auto min-h-screen">
+            <header class="mb-32 flex flex-col md:flex-row md:items-end justify-between gap-16">
+                <div class="space-y-10">
+                    <button onclick="navigateTo('home')" class="text-white/30 hover:text-white transition-all flex items-center gap-4 text-sm font-bold uppercase tracking-[0.4em]">
+                        <span class="material-symbols-outlined text-sm">west</span> Hub
+                    </button>
+                    <h2 class="font-headline text-8xl md:text-[9rem] font-bold text-white leading-none tracking-tighter">Cell <span class="text-primary italic">Culture.</span></h2>
+                </div>
+                <div class="text-right space-y-4">
+                    <h3 id="month-label" class="font-headline text-5xl font-bold text-white tracking-tight">May 2026</h3>
+                </div>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-24">
+                <div class="lg:col-span-8 space-y-20">
+                    <div class="glass-panel rounded-[4rem] p-16 border-white/5 shadow-2xl">
+                        <div class="flex justify-between items-center mb-16">
+                            <h3 class="font-headline text-4xl font-bold text-white">Facility Calendar</h3>
+                            <div class="flex gap-6">
+                                <button onclick="changeMonth(-1)" class="p-5 bg-white/5 hover:bg-primary/20 rounded-3xl transition-all"><span class="material-symbols-outlined text-2xl">navigate_before</span></button>
+                                <button onclick="changeMonth(1)" class="p-5 bg-white/5 hover:bg-primary/20 rounded-3xl transition-all"><span class="material-symbols-outlined text-2xl">navigate_next</span></button>
+                            </div>
+                        </div>
+                        <div id="calendar-view" class="grid grid-cols-7 gap-6 text-center">
+                            <!-- Injected -->
+                        </div>
+                    </div>
+
+                    <div id="day-detail-container" class="glass-panel rounded-[4rem] p-16 hidden border-white/5 fade-in-smooth">
+                        <div class="flex justify-between items-center mb-12">
+                            <div class="space-y-2">
+                                <h3 id="detail-date-label" class="font-headline text-4xl font-bold text-white">Detailed Schedule</h3>
+                                <p class="text-primary/50 font-mono text-xs uppercase tracking-widest">Unit Reservations</p>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16">
+                            <div id="day-timeline" class="space-y-4 border-r border-white/5 pr-12">
+                                <!-- Injected -->
+                            </div>
+                            <div id="reservation-controls" class="space-y-12 py-4">
+                                <div class="space-y-8">
+                                    <h4 class="font-headline text-3xl font-bold text-white tracking-tight">Set Window</h4>
+                                    <div class="grid grid-cols-1 gap-8">
+                                        <div class="space-y-4">
+                                            <p class="text-xs font-bold text-white/30 uppercase tracking-[0.3em]">Start Time</p>
+                                            <input id="start-time-pick" type="time" onchange="updateTimes()" class="w-full bg-white/5 border border-white/10 rounded-2xl px-8 py-5 text-white text-2xl outline-none focus:border-primary transition-all cursor-pointer"/>
+                                        </div>
+                                        <div class="space-y-4">
+                                            <p class="text-xs font-bold text-white/30 uppercase tracking-[0.3em]">End Time</p>
+                                            <input id="end-time-pick" type="time" onchange="updateTimes()" class="w-full bg-white/5 border border-white/10 rounded-2xl px-8 py-5 text-white text-2xl outline-none focus:border-primary transition-all cursor-pointer"/>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div id="booking-summary" class="p-10 bg-primary/5 border border-primary/40 rounded-[3rem] space-y-6 hidden">
+                                    <div class="space-y-3">
+                                        <p class="text-[11px] font-bold text-primary uppercase tracking-[0.5em]">Ready for Confirmation</p>
+                                        <p id="summary-text" class="text-3xl font-bold text-white leading-tight"></p>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-8 pt-4">
+                                    <div id="book-status-box" class="w-full bg-white/5 border border-white/10 rounded-[2.5rem] p-10 text-xs text-white/30 font-bold uppercase tracking-[0.4em] text-center italic">
+                                        Login to continue
+                                    </div>
+                                    <button id="confirm-booking-btn" disabled onclick="finalizeBooking()" class="w-full py-8 bg-white/10 text-white/20 font-bold text-3xl rounded-[2.5rem] cursor-not-allowed transition-all shadow-2xl">
+                                        Confirm Session
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-4">
+                    <div class="glass-panel rounded-[4rem] p-16 sticky top-32 border-white/5 space-y-16 shadow-2xl">
+                        <div class="space-y-8 text-center">
+                            <h3 class="font-headline text-5xl font-bold text-white tracking-tighter">Admin <span class="text-primary italic">Panel.</span></h3>
+                        </div>
+
+                        <div id="admin-dashboard" class="hidden p-10 bg-white/5 border border-white/10 rounded-[3.5rem] space-y-10">
+                            <div class="flex justify-between items-center">
+                                <h4 class="text-xs font-bold text-primary uppercase tracking-[0.6em]">Lab Admin</h4>
+                                <div class="w-4 h-4 rounded-full bg-primary animate-pulse shadow-[0_0_15px_rgba(255,180,172,0.5)]"></div>
+                            </div>
+                            <div id="admin-booking-list" class="space-y-5 max-h-[45vh] overflow-y-auto no-scrollbar">
+                                <!-- Injected -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="py-32 text-center border-t border-white/5 bg-surface mt-32">
+        <img src="/PetriPlan.Transparentlogo.png" class="h-16 mx-auto mb-14 opacity-30 hover:opacity-100 transition-all cursor-pointer" alt=""/>
+        <div class="space-y-6">
+            <p class="text-base font-bold text-white/15 uppercase tracking-[0.8em]">
+                &copy; 2026 PetriPlan • Cardiovascular RNA Biology Division
+            </p>
+            <p class="text-[11px] text-white/10 font-mono tracking-widest uppercase">BRIC • RGCB • INDIA</p>
+        </div>
+    </footer>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
