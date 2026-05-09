@@ -1,6 +1,6 @@
 import './style.css';
 
-/** 
+/**
  * --- SUPABASE CONFIGURATION ---
  */
 const SUPABASE_URL = "https://xhiqltrsxrejldfuvfgr.supabase.co";
@@ -9,8 +9,8 @@ const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SU
 
 // --- DATA ---
 const labData = {
-    pi: { 
-        name: "Dr. Rakesh S. Laishram", 
+    pi: {
+        name: "Dr. Rakesh S. Laishram",
         title: "PhD, FNASc",
         role: "Scientist F & Swarna Jayanti Fellow",
         bio: "Deciphering the molecular language of RNA processing to heal the failing heart and restore cardiac function."
@@ -432,9 +432,9 @@ async function finalizeBooking() {
     const endStr = document.getElementById('end-time-pick').value;
     const activeFac = labData.facilities.find(f => f.id === State.selectedFacility);
 
-    const booking = { 
-        date: State.selectedDate, 
-        start: State.selectedStart, 
+    const booking = {
+        date: State.selectedDate,
+        start: State.selectedStart,
         end: State.selectedEnd,
         startStr: startStr,
         endStr: endStr,
@@ -453,7 +453,7 @@ async function finalizeBooking() {
     }
 
     State.bookings.push(booking);
-    
+
     const btn = document.getElementById('confirm-booking-btn');
     const originalText = btn.innerText;
     btn.innerText = "Confirmed!";
