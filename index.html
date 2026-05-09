@@ -44,7 +44,10 @@
     </header>
 
     <!-- Login Modal (Simplified Username/Password) -->
-    <div id="login-modal" class="fixed inset-0 z-[100] items-center justify-center px-6">
+    <style>
+        #login-modal.active { display: flex !important; }
+    </style>
+    <div id="login-modal" class="fixed inset-0 z-[100] hidden items-center justify-center px-6">
         <div class="absolute inset-0 bg-black/98 backdrop-blur-2xl" onclick="toggleLoginModal()"></div>
         <div class="glass-panel w-full max-w-md p-12 rounded-[3.5rem] relative z-10 space-y-12 border-white/10 shadow-[0_0_150px_rgba(0,0,0,1)]">
             <div class="text-center">

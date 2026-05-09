@@ -1,12 +1,12 @@
 import './style.css';
 
 /** 
- * --- HARDCODED AUTH SYSTEM ---
- * Simple username/password map as requested.
+ * --- AUTH SYSTEM ---
+ * Uses Vite environment variables for basic protection.
+ * Note: These are bundled into the client build.
  */
-const AUTH_USERS = {
-    "annmaryjoseph": "adminpetri9999"
-};
+const ADMIN_USER = import.meta.env.VITE_ADMIN_USER;
+const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASS;
 
 // --- DATA ---
 const labData = {
@@ -116,9 +116,8 @@ async function initApp() {
 }
 
 function syncUser(userData) {
-    const adminEmail = "annmaryjoseph";
     State.user = userData;
-    State.isAdmin = userData.username === adminEmail;
+    State.isAdmin = userData.username === ADMIN_USER;
     localStorage.setItem('petriplan_user', JSON.stringify(userData));
     updateAuthUI();
 }
@@ -127,9 +126,11 @@ function navigateTo(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const target = document.getElementById(`page-${pageId}`);
     if (target) target.classList.add('active');
+    
+    // Always show header on all pages now
     const header = document.getElementById('main-header');
-    if (pageId === 'home') header.classList.remove('-translate-y-full');
-    else header.classList.add('-translate-y-full');
+    header.classList.remove('-translate-y-full');
+    
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -148,13 +149,12 @@ function handleAuthAction() {
     const pass = document.getElementById('auth-pass').value;
     const errorEl = document.getElementById('auth-error');
 
-    if (AUTH_USERS[user] && AUTH_USERS[user] === pass) {
+    if (user === ADMIN_USER && pass === ADMIN_PASS) {
         errorEl.classList.add('hidden');
-        syncUser({ username: user, name: user.charAt(0).toUpperCase() + user.slice(1) });
+        syncUser({ username: user, name: "Ann Mary" });
         toggleLoginModal();
     } else {
         errorEl.classList.remove('hidden');
-        errorEl.innerText = "Invalid credentials. Access Denied.";
     }
 }
 
@@ -163,36 +163,32 @@ function logout() {
     State.isAdmin = false;
     localStorage.removeItem('petriplan_user');
     updateAuthUI();
-    navigateTo('home');
 }
 
 function updateAuthUI() {
     const authBox = document.getElementById('header-auth');
     const bookStatus = document.getElementById('book-status-box');
     const bookBtn = document.getElementById('confirm-booking-btn');
-    const adminPanel = document.getElementById('admin-dashboard');
 
     if (State.user) {
         authBox.innerHTML = `
             <div class="flex items-center gap-4 cursor-pointer group" onclick="logout()">
                 <div class="text-right hidden sm:block">
                     <p class="text-xs font-bold text-white group-hover:text-primary transition-all">${State.user.name}</p>
-                    <p class="text-[9px] text-primary/50 uppercase tracking-[0.3em]">${State.isAdmin ? 'Admin' : 'Researcher'}</p>
+                    <p class="text-[9px] text-primary/50 uppercase tracking-[0.3em]">${State.isAdmin ? 'Admin' : 'User'}</p>
                 </div>
                 <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-white/10 shadow-lg bg-primary flex items-center justify-center text-black font-bold">
                     ${State.user.name.charAt(0)}
                 </div>
             </div>
         `;
-        if (bookStatus) bookStatus.innerHTML = `<span class="text-primary font-bold">Logged In:</span> ${State.user.username}`;
+        if (bookStatus) bookStatus.innerHTML = `<span class="text-primary font-bold">Session Active:</span> ${State.user.username}`;
         if (bookBtn) {
             bookBtn.disabled = false;
             bookBtn.classList.remove('opacity-20', 'cursor-not-allowed');
             bookBtn.classList.add('bg-primary', 'text-black');
             bookBtn.innerText = "Confirm Session";
         }
-        if (State.isAdmin && adminPanel) adminPanel.classList.remove('hidden');
-        else if (adminPanel) adminPanel.classList.add('hidden');
     } else {
         authBox.innerHTML = `<button onclick="toggleLoginModal()" class="px-6 py-2.5 bg-white/5 border border-white/10 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white/10">Signin</button>`;
         if (bookStatus) bookStatus.innerHTML = `Login to continue`;
@@ -353,14 +349,14 @@ function updateTimes() {
     const activeFac = labData.facilities.find(f => f.id === State.selectedFacility);
     if (activeFac.options && !State.selectedSubOption) {
         summary.classList.remove('hidden');
-        text.innerHTML = `<span class="text-primary">Select Equipment Sub-type</span>`;
+        text.innerHTML = `<span class="text-primary">Select Sub-type</span>`;
         btn.disabled = true;
         return;
     }
 
     if (endTotal <= startTotal) {
         summary.classList.remove('hidden');
-        text.innerHTML = `<span class="text-red-500">Invalid Time Range</span>`;
+        text.innerHTML = `<span class="text-red-500">Invalid Range</span>`;
         btn.disabled = true;
         return;
     }
