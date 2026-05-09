@@ -5,9 +5,7 @@ import './style.css';
  * Simple username/password map as requested.
  */
 const AUTH_USERS = {
-    "annmaryjoseph": "password123",
-    "pi": "rakesh2026",
-    "researcher": "petri2026"
+    "annmaryjoseph": "adminpetri9999"
 };
 
 // --- DATA ---
