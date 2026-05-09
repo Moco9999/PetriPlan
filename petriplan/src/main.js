@@ -10,6 +10,11 @@ const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SU
 
 // --- DATA ---
 const labData = {
+    antigravity: {
+        active: true,
+        intensity: 1.0,
+        mode: 'fluid' // 'fluid' | 'float'
+    },
     pi: {
         name: "Dr. Rakesh S. Laishram",
         title: "PhD, FNASc",
@@ -130,6 +135,7 @@ async function initApp() {
     renderCalendar();
     renderFacilitySelector();
     updateAuthUI();
+    initAntigravity();
 
     if (supabase) {
         try {
@@ -179,6 +185,39 @@ function syncUser(supabaseUser) {
     };
     State.isAdmin = State.user.role === 'admin';
     updateAuthUI();
+}
+
+function initAntigravity() {
+    const statusBox = document.getElementById('lab-status-sidebar');
+    if (statusBox) {
+        const agIndicator = document.createElement('div');
+        agIndicator.className = 'mt-6 p-4 bg-primary/5 border border-primary/20 rounded-2xl';
+        agIndicator.innerHTML = `
+            <div class="flex items-center gap-3 mb-2">
+                <span class="material-symbols-outlined text-primary animate-pulse">flare</span>
+                <span class="text-[10px] font-bold text-white uppercase tracking-widest">Antigravity Active</span>
+            </div>
+            <p class="text-[9px] text-white/40 leading-tight">Visual stability compensation engaged. Elements are weightless.</p>
+        `;
+        statusBox.appendChild(agIndicator);
+    }
+
+    // Floating effect for cards
+    document.addEventListener('mousemove', (e) => {
+        if (!labData.antigravity.active) return;
+        const cards = document.querySelectorAll('.glass-panel, .facility-btn');
+        const { clientX, clientY } = e;
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+
+        const moveX = (clientX - centerX) / 100;
+        const moveY = (clientY - centerY) / 100;
+
+        cards.forEach((card, index) => {
+            const depth = (index % 3 + 1) * 2;
+            card.style.transform = `translate(${moveX * depth}px, ${moveY * depth}px)`;
+        });
+    });
 }
 
 function navigateTo(pageId) {
@@ -353,7 +392,7 @@ function renderFacilitySelector() {
     if (!container) return;
 
     container.innerHTML = labData.facilities.map(f => `
-        <button onclick="selectFacility('${f.id}')" class="flex-1 flex flex-col items-center gap-4 p-8 rounded-[2.5rem] border transition-all ${State.selectedFacility === f.id ? 'shadow-[0_0_40px_rgba(255,180,172,0.15)]' : 'bg-white/5 border-white/5 hover:bg-white/10'}" style="${State.selectedFacility === f.id ? `background-color: ${f.color}15; border-color: ${f.color}80; box-shadow: 0 0 40px ${f.color}20` : ''}">
+        <button onclick="selectFacility('${f.id}')" class="facility-btn flex-1 flex flex-col items-center gap-4 p-8 rounded-[2.5rem] border transition-all ${State.selectedFacility === f.id ? 'shadow-[0_0_40px_rgba(255,180,172,0.15)]' : 'bg-white/5 border-white/5 hover:bg-white/10'}" style="${State.selectedFacility === f.id ? `background-color: ${f.color}15; border-color: ${f.color}80; box-shadow: 0 0 40px ${f.color}20` : ''}">
             <span class="material-symbols-outlined text-3xl ${State.selectedFacility === f.id ? '' : 'text-white/20'}" style="${State.selectedFacility === f.id ? `color: ${f.color}` : ''}">${f.icon}</span>
             <span class="text-[10px] font-bold uppercase tracking-widest ${State.selectedFacility === f.id ? 'text-white' : 'text-white/30'}">${f.name}</span>
         </button>
