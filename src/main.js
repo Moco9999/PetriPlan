@@ -3,10 +3,12 @@ import './style.css';
 /** 
  * --- AUTH SYSTEM ---
  * Uses Vite environment variables for basic protection.
- * Note: These are bundled into the client build.
  */
-const ADMIN_USER = import.meta.env.VITE_ADMIN_USER;
-const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASS;
+const ADMIN_USER = import.meta.env.VITE_ADMIN_USER || "annmaryjoseph";
+const ADMIN_PASS = import.meta.env.VITE_ADMIN_PASS || "adminpetri9999";
+
+// Log to help user confirm env is working (can be removed later)
+console.log("PetriPlan Auth initialized.");
 
 // --- DATA ---
 const labData = {
@@ -93,7 +95,6 @@ async function initApp() {
     renderTeam();
     renderPubs();
     
-    // Check local session
     if (State.user) {
         syncUser(State.user);
     } else {
@@ -102,6 +103,10 @@ async function initApp() {
 
     renderCalendar();
     
+    // Explicitly hide modal on load to prevent "Coming first" issue
+    const modal = document.getElementById('login-modal');
+    if (modal) modal.classList.remove('active');
+
     window.navigateTo = navigateTo;
     window.scrollToSection = scrollToSection;
     window.toggleLoginModal = toggleLoginModal;
@@ -127,7 +132,6 @@ function navigateTo(pageId) {
     const target = document.getElementById(`page-${pageId}`);
     if (target) target.classList.add('active');
     
-    // Always show header on all pages now
     const header = document.getElementById('main-header');
     header.classList.remove('-translate-y-full');
     
@@ -145,16 +149,20 @@ function toggleLoginModal() {
 }
 
 function handleAuthAction() {
-    const user = document.getElementById('auth-user').value;
-    const pass = document.getElementById('auth-pass').value;
+    const userField = document.getElementById('auth-user');
+    const passField = document.getElementById('auth-pass');
+    const user = userField.value;
+    const pass = passField.value;
     const errorEl = document.getElementById('auth-error');
 
-    if (user === ADMIN_USER && pass === ADMIN_PASS) {
+    // Case-insensitive user check
+    if (user.toLowerCase() === ADMIN_USER.toLowerCase() && pass === ADMIN_PASS) {
         errorEl.classList.add('hidden');
         syncUser({ username: user, name: "Ann Mary" });
         toggleLoginModal();
     } else {
         errorEl.classList.remove('hidden');
+        errorEl.innerText = "Invalid credentials. Try again.";
     }
 }
 
@@ -163,6 +171,9 @@ function logout() {
     State.isAdmin = false;
     localStorage.removeItem('petriplan_user');
     updateAuthUI();
+    // Clear fields
+    document.getElementById('auth-user').value = '';
+    document.getElementById('auth-pass').value = '';
 }
 
 function updateAuthUI() {
@@ -182,7 +193,7 @@ function updateAuthUI() {
                 </div>
             </div>
         `;
-        if (bookStatus) bookStatus.innerHTML = `<span class="text-primary font-bold">Session Active:</span> ${State.user.username}`;
+        if (bookStatus) bookStatus.innerHTML = `<span class="text-primary font-bold">Session:</span> ${State.user.username}`;
         if (bookBtn) {
             bookBtn.disabled = false;
             bookBtn.classList.remove('opacity-20', 'cursor-not-allowed');
@@ -190,7 +201,7 @@ function updateAuthUI() {
             bookBtn.innerText = "Confirm Session";
         }
     } else {
-        authBox.innerHTML = `<button onclick="toggleLoginModal()" class="px-6 py-2.5 bg-white/5 border border-white/10 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white/10">Signin</button>`;
+        authBox.innerHTML = `<button onclick="toggleLoginModal()" class="px-6 py-2.5 bg-white/5 border border-white/10 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-all">Signin</button>`;
         if (bookStatus) bookStatus.innerHTML = `Login to continue`;
         if (bookBtn) { 
             bookBtn.disabled = true; 
