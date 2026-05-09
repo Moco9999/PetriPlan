@@ -35,7 +35,7 @@ const labData = {
         {
             title: "Star-PAP controls oncogene expression through primary miRNA 3'-end formation to regulate cellular proliferation and tumour formation.",
             authors: "Mohanan, N. K., Shaji, F., Sudheesh, A. P., Arathi, B. P., Sundaresan, N. R., & Laishram R. S. (2024)",
-            journal: "Biochimica et biophysica acta. Molecular basis of disease",
+            journal: "Biochimica et biophysica acta. Molecular basis of disease 167080. Advance online publication.",
             url: "https://doi.org/10.1016/j.bbadis.2024.167080"
         },
         {
@@ -52,14 +52,14 @@ const labData = {
         },
         {
             title: "Star-PAP RNA Binding Landscape Reveals Novel Role of Star-PAP in mRNA Metabolism That Requires RBM10-RNA Association",
-            authors: "Ganesh R. Koshre, Feba Shaji, Neeraja K. Mohanan, Nimmy Mohan, Jamshaid Ali and Rakesh S. Laishram (2021)",
+            authors: "Ganesh R. Koshre, Feba Shaji ,Neeraja K. Mohanan, Nimmy Mohan,Jamshaid Ali and Rakesh S. Laishram (2021)",
             journal: "International Journal of Molecular Sciences",
             url: "https://doi.org/10.3390/ijms22189980"
         },
         {
             title: "Transgenesis of mammalian PABP reveals mRNA polyadenylation as a general stress response mechanism in bacteria.",
             authors: "Francis N., Laishram R. S. (2021).",
-            journal: "iScience",
+            journal: "iScience 24(10), 103119.",
             url: "https://doi.org/10.1016/j.isci.2021.103119"
         },
         {
@@ -71,7 +71,7 @@ const labData = {
         {
             title: "Star-PAP controlled alternative polyadenylation coupled poly(A) tail length regulates expression in hypertrophic heart",
             authors: "Sudheesh, A.P., Mohan, N., Nimmy, F., Rakesh S. Laishram*, and Richard Anderson* (2019)",
-            journal: "Nucleic Acid Res.",
+            journal: "Nucleic Acid Res. gkz875",
             url: "https://doi.org/10.1093/nar/gkz875"
         },
         {
@@ -172,31 +172,6 @@ async function handleGoogleLogin() {
         options: { redirectTo: window.location.origin + window.location.pathname }
     });
     if (error) alert(error.message);
-}
-
-function closeGoogleSelector() {
-    document.getElementById('google-selector').classList.add('hidden');
-    document.getElementById('google-selector').classList.remove('flex');
-}
-
-function finalizeMockAuth(email, name) {
-    const mockUser = {
-        id: 'mock-id-' + Math.random(),
-        email: email,
-        user_metadata: {
-            full_name: name,
-            avatar_url: null
-        }
-    };
-    syncUser(mockUser);
-    closeGoogleSelector();
-    toggleLoginModal();
-
-    const redirect = document.getElementById('auth-redirect');
-    redirect.classList.add('active');
-    setTimeout(() => {
-        redirect.classList.remove('active');
-    }, 1500);
 }
 
 async function handleAuthAction(type) {
@@ -333,15 +308,23 @@ function changeMonth(delta) {
 function selectDate(date) {
     State.selectedDate = date;
     const container = document.getElementById('day-detail-container');
-    container.classList.remove('hidden');
-    document.getElementById('detail-date-label').innerText = new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    const dateLabel = document.getElementById('detail-date-label');
+    const selectedTypeDisplay = document.getElementById('selected-type-display');
+    const activeFac = labData.facilities.find(f => f.id === State.selectedFacility);
+
+    if (container) container.classList.remove('hidden');
+    if (dateLabel) dateLabel.innerText = new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    if (selectedTypeDisplay && activeFac) {
+        selectedTypeDisplay.innerText = activeFac.name;
+        selectedTypeDisplay.style.color = activeFac.color;
+    }
+
     renderCalendar();
     renderDayTimeline();
     updateTimes();
 
-    // Smooth scroll to details
     setTimeout(() => {
-        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (container) container.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
 }
 
@@ -502,8 +485,6 @@ window.navigateTo = navigateTo;
 window.scrollToSection = scrollToSection;
 window.toggleLoginModal = toggleLoginModal;
 window.handleGoogleLogin = handleGoogleLogin;
-window.closeGoogleSelector = closeGoogleSelector;
-window.finalizeMockAuth = finalizeMockAuth;
 window.handleAuthAction = handleAuthAction;
 window.logout = logout;
 window.selectFacility = selectFacility;
