@@ -145,6 +145,7 @@ async function initApp() {
             console.warn("Supabase auth error:", e);
         }
     }
+    renderAdminList();
 }
 
 async function fetchBookings() {
@@ -156,6 +157,7 @@ async function fetchBookings() {
             localStorage.setItem('petriplan_v6_bookings', JSON.stringify(State.bookings));
             renderCalendar();
             if (State.selectedDate) renderDayTimeline();
+            renderAdminList();
         }
     } catch (e) { console.warn("Supabase fetch failed."); }
 }
@@ -266,6 +268,7 @@ function updateAuthUI() {
     const bookStatus = document.getElementById('book-status-box');
     const bookBtn = document.getElementById('confirm-booking-btn');
     const adminPanel = document.getElementById('admin-dashboard');
+    const bookingSigninBtn = document.getElementById('booking-signin-btn');
 
     if (State.user) {
         authBox.innerHTML = `
@@ -279,18 +282,29 @@ function updateAuthUI() {
                 </div>
             </div>
         `;
+        if (bookingSigninBtn) {
+            bookingSigninBtn.innerText = "Logout";
+            bookingSigninBtn.onclick = logout;
+        }
         if (bookStatus) bookStatus.innerHTML = `<span class="text-primary font-bold">Authenticated:</span> ${State.user.email}`;
         if (bookBtn) {
             bookBtn.disabled = false;
-            bookBtn.classList.remove('opacity-20', 'cursor-not-allowed', 'bg-white/10', 'text-white/20');
+            bookBtn.classList.remove('bg-white/5', 'text-white/10', 'cursor-not-allowed');
             bookBtn.classList.add('bg-primary', 'text-black');
         }
-        if (State.isAdmin && adminPanel) adminPanel.classList.remove('hidden');
-        else if (adminPanel) adminPanel.classList.add('hidden');
+    if (adminPanel) adminPanel.classList.remove('hidden');
     } else {
         authBox.innerHTML = `<button onclick="toggleLoginModal()" class="px-6 py-2.5 bg-white/5 border border-white/10 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white/10">Signin</button>`;
+        if (bookingSigninBtn) {
+            bookingSigninBtn.innerText = "Signin";
+            bookingSigninBtn.onclick = toggleLoginModal;
+        }
         if (bookStatus) bookStatus.innerHTML = `Login to continue`;
-        if (bookBtn) { bookBtn.disabled = true; bookBtn.classList.add('opacity-20'); }
+        if (bookBtn) {
+            bookBtn.disabled = true;
+            bookBtn.classList.add('bg-white/5', 'text-white/10', 'cursor-not-allowed');
+            bookBtn.classList.remove('bg-primary', 'text-black');
+        }
     }
 }
 
@@ -339,9 +353,9 @@ function renderFacilitySelector() {
     if (!container) return;
 
     container.innerHTML = labData.facilities.map(f => `
-        <button onclick="selectFacility('${f.id}')" class="flex-1 flex flex-col items-center gap-3 p-6 rounded-[2.5rem] border transition-all ${State.selectedFacility === f.id ? 'border-primary shadow-xl shadow-primary/10' : 'bg-white/5 border-white/5 hover:bg-white/10'}" style="${State.selectedFacility === f.id ? `background-color: ${f.color}20; border-color: ${f.color}` : ''}">
+        <button onclick="selectFacility('${f.id}')" class="flex-1 flex flex-col items-center gap-4 p-8 rounded-[2.5rem] border transition-all ${State.selectedFacility === f.id ? 'shadow-[0_0_40px_rgba(255,180,172,0.15)]' : 'bg-white/5 border-white/5 hover:bg-white/10'}" style="${State.selectedFacility === f.id ? `background-color: ${f.color}15; border-color: ${f.color}80; box-shadow: 0 0 40px ${f.color}20` : ''}">
             <span class="material-symbols-outlined text-3xl ${State.selectedFacility === f.id ? '' : 'text-white/20'}" style="${State.selectedFacility === f.id ? `color: ${f.color}` : ''}">${f.icon}</span>
-            <span class="text-[11px] font-bold uppercase tracking-widest ${State.selectedFacility === f.id ? 'text-white' : 'text-white/40'}">${f.name}</span>
+            <span class="text-[10px] font-bold uppercase tracking-widest ${State.selectedFacility === f.id ? 'text-white' : 'text-white/30'}">${f.name}</span>
         </button>
     `).join('');
 }
@@ -368,12 +382,12 @@ function renderCalendar() {
         const bookedFacilities = [...new Set(dayBookings.map(b => b.facility_id))];
 
         grid.innerHTML += `
-            <button onclick="selectDate('${dateStr}')" class="aspect-square flex flex-col items-center justify-center rounded-[1.8rem] text-base transition-all ${isSelected ? 'bg-primary text-black font-bold scale-110 shadow-2xl shadow-primary/30' : 'hover:bg-white/5 text-white/40'}">
+            <button onclick="selectDate('${dateStr}')" class="aspect-square flex flex-col items-center justify-center rounded-full text-base transition-all relative ${isSelected ? 'bg-white text-black font-bold scale-110 shadow-[0_0_30px_rgba(255,255,255,0.3)]' : 'hover:bg-white/5 text-white/30'}">
                 ${i}
-                <div class="flex gap-1 mt-1">
+                <div class="absolute bottom-3 flex gap-1">
                     ${bookedFacilities.map(facId => {
                         const fac = labData.facilities.find(f => f.id === facId);
-                        return `<div class="w-1.5 h-1.5 rounded-full" style="background-color: ${fac ? fac.color : '#fff'}"></div>`;
+                        return `<div class="w-1 h-1 rounded-full" style="background-color: ${fac ? fac.color : '#fff'}"></div>`;
                     }).join('')}
                 </div>
             </button>`;
@@ -382,11 +396,31 @@ function renderCalendar() {
 
 function selectDate(date) {
     State.selectedDate = date;
-    document.getElementById('day-detail-container').classList.remove('hidden');
-    document.getElementById('detail-date-label').innerText = new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    const detailContainer = document.getElementById('day-detail-container');
+    if (detailContainer) {
+        detailContainer.classList.remove('hidden');
+        detailContainer.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    const dateLabel = document.getElementById('detail-date-label');
+    if (dateLabel) {
+        const d = new Date(date);
+        dateLabel.innerText = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    }
+
+    const facDisplay = document.getElementById('selected-fac-display');
+    if (facDisplay) {
+        const fac = labData.facilities.find(f => f.id === State.selectedFacility);
+        if (fac) {
+            facDisplay.innerHTML = `<span class="material-symbols-outlined text-sm">${fac.icon}</span> ${fac.name}`;
+            facDisplay.style.color = fac.color;
+        } else {
+            facDisplay.innerHTML = `Select a booking type above`;
+        }
+    }
+
     renderCalendar();
     renderDayTimeline();
-    renderFacilitySelector();
 }
 
 function renderDayTimeline() {
@@ -396,16 +430,19 @@ function renderDayTimeline() {
     list.innerHTML = '';
     for (let h = 8; h <= 20; h++) {
         list.innerHTML += `
-            <div class="flex gap-6 items-center min-h-[4rem] group">
-                <div class="w-16 text-right text-[10px] font-bold text-white/10 group-hover:text-white/30 transition-all">${h}:00</div>
-                <div class="flex-1 h-[1px] bg-white/5 relative">
+            <div class="flex gap-8 items-center min-h-[5rem] group border-b border-white/[0.02]">
+                <div class="w-12 text-right text-[9px] font-bold text-white/10 group-hover:text-white/40 transition-all">${h}:00</div>
+                <div class="flex-1 relative h-full">
                     ${dayBookings.map(b => {
                         if (Math.floor(b.start / 60) === h) {
-                            const topOffset = (b.start % 60) * (4 / 60);
-                            const height = (parseFloat(b.duration) * 4);
+                            const topOffset = (b.start % 60) * (5 / 60);
+                            const height = (parseFloat(b.duration) * 5);
                             const fac = labData.facilities.find(f => f.id === b.facility_id);
                             const color = fac ? fac.color : '#ffb4ac';
-                            return `<div class="absolute inset-x-0 rounded-2xl calendar-event z-10 p-4" style="top: ${topOffset - 1}rem; height: ${height}rem; border-color: ${color}; background: ${color}20"><p class="text-[10px] font-bold text-white truncate">${b.facility_name || 'Reserved'}</p><p class="text-[9px] font-mono" style="color: ${color}">${b.startStr} - ${b.endStr}</p></div>`;
+                            return `<div class="absolute inset-x-0 rounded-3xl z-10 p-5 flex flex-col justify-center" style="top: ${topOffset}rem; height: ${height}rem; border-left: 4px solid ${color}; background: ${color}10">
+                                <p class="text-[10px] font-bold text-white truncate uppercase tracking-widest">${b.facility_name || 'Reserved'}</p>
+                                <p class="text-[9px] font-mono mt-1" style="color: ${color}">${b.startStr} - ${b.endStr}</p>
+                            </div>`;
                         }
                         return '';
                     }).join('')}
@@ -471,7 +508,7 @@ async function finalizeBooking() {
     const endStr = document.getElementById('end-time-pick').value;
     const durationH = ((State.selectedEnd - State.selectedStart) / 60).toFixed(1);
     const activeFac = labData.facilities.find(f => f.id === State.selectedFacility);
-    const facName = activeFac.name + (State.selectedSubOption ? ` (${State.selectedSubOption})` : "");
+    const facName = activeFac.name;
 
     const booking = {
         date: State.selectedDate,
@@ -491,6 +528,7 @@ async function finalizeBooking() {
         const { error } = await supabase.from('bookings').insert([booking]);
         if (error) console.error(error.message);
     }
+    renderAdminList();
 
     const btn = document.getElementById('confirm-booking-btn');
     btn.innerText = "Confirmed!";
@@ -503,6 +541,34 @@ async function finalizeBooking() {
 }
 
 // --- TEAM RENDER ---
+function renderAdminList() {
+    const list = document.getElementById('admin-booking-list');
+    if (!list) return;
+
+    // Sort bookings by date and start time
+    const sorted = [...State.bookings].sort((a, b) => {
+        if (a.date !== b.date) return a.date.localeCompare(b.date);
+        return a.start - b.start;
+    });
+
+    list.innerHTML = sorted.map(b => {
+        const fac = labData.facilities.find(f => f.id === b.facility_id);
+        const color = fac ? fac.color : '#fff';
+        return `
+            <div class="p-4 bg-white/[0.03] border border-white/5 rounded-2xl space-y-2">
+                <div class="flex justify-between items-start">
+                    <p class="text-[10px] font-bold text-white uppercase tracking-wider">${b.facility_name}</p>
+                    <div class="w-1.5 h-1.5 rounded-full" style="background-color: ${color}"></div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <p class="text-[9px] text-white/40 font-mono">${b.date} | ${b.startStr}-${b.endStr}</p>
+                    <p class="text-[8px] text-primary font-bold uppercase truncate max-w-[80px]">${b.user.split('@')[0]}</p>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
 function renderTeam() {
     const grid = document.getElementById('team-grid');
     if (!grid) return;
