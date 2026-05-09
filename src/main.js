@@ -1,12 +1,14 @@
 import './style.css';
 
 /** 
- * --- SUPABASE CONFIGURATION ---
- * Official credentials for PetriPlan Division Portal
+ * --- HARDCODED AUTH SYSTEM ---
+ * Simple username/password map as requested.
  */
-const SUPABASE_URL = "https://xhiqltrsxrejldfuvfgr.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoaXFsdHJzeHJlamxkZnV2ZmdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMzIxMDEsImV4cCI6MjA5MzgwODEwMX0.OeqHj63tmSF9iebL8UEYIr8VufMZ17rVXoA5WYJsM-g";
-const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+const AUTH_USERS = {
+    "annmaryjoseph": "password123",
+    "pi": "rakesh2026",
+    "researcher": "petri2026"
+};
 
 // --- DATA ---
 const labData = {
@@ -73,8 +75,8 @@ const labData = {
 
 // --- SECURE STATE ---
 const State = {
-    user: null,
-    bookings: JSON.parse(localStorage.getItem('petriplan_v6_bookings') || '[]'),
+    user: JSON.parse(localStorage.getItem('petriplan_user') || 'null'),
+    bookings: JSON.parse(localStorage.getItem('petriplan_v7_bookings') || '[]'),
     currentMonth: new Date(),
     selectedDate: null,
     selectedStart: null,
@@ -93,15 +95,11 @@ async function initApp() {
     renderTeam();
     renderPubs();
     
-    if (supabase) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) syncUser(session.user);
-        
-        supabase.auth.onAuthStateChange((_event, session) => {
-            if (session) syncUser(session.user);
-            else { State.user = null; State.isAdmin = false; updateAuthUI(); }
-        });
-        fetchBookings();
+    // Check local session
+    if (State.user) {
+        syncUser(State.user);
+    } else {
+        updateAuthUI();
     }
 
     renderCalendar();
@@ -109,7 +107,6 @@ async function initApp() {
     window.navigateTo = navigateTo;
     window.scrollToSection = scrollToSection;
     window.toggleLoginModal = toggleLoginModal;
-    window.handleGoogleLogin = handleGoogleLogin;
     window.handleAuthAction = handleAuthAction;
     window.changeMonth = changeMonth;
     window.selectDate = selectDate;
@@ -120,41 +117,18 @@ async function initApp() {
     window.selectSubOption = selectSubOption;
 }
 
-async function fetchBookings() {
-    if (!supabase) return;
-    try {
-        const { data } = await supabase.from('bookings').select('*');
-        if (data) {
-            State.bookings = data;
-            localStorage.setItem('petriplan_v6_bookings', JSON.stringify(State.bookings));
-            renderCalendar();
-            if (State.selectedDate) renderDayTimeline();
-        }
-    } catch (e) { console.warn("Supabase fetch failed."); }
-}
-
-function syncUser(supabaseUser) {
-    if (!supabaseUser) return;
-    const email = supabaseUser.email;
-    const metadata = supabaseUser.user_metadata || {};
-    
-    // STRICT ADMIN CONTROL: Only annmaryjoseph@rgcb.res.in
-    const adminEmail = "annmaryjoseph@rgcb.res.in";
-    
-    State.user = { 
-        name: metadata.full_name || email.split('@')[0], 
-        email: email, 
-        avatar: metadata.avatar_url || email.charAt(0).toUpperCase(),
-        role: email === adminEmail ? 'admin' : 'researcher',
-        id: supabaseUser.id
-    };
-    State.isAdmin = State.user.role === 'admin';
+function syncUser(userData) {
+    const adminEmail = "annmaryjoseph";
+    State.user = userData;
+    State.isAdmin = userData.username === adminEmail;
+    localStorage.setItem('petriplan_user', JSON.stringify(userData));
     updateAuthUI();
 }
 
 function navigateTo(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(`page-${pageId}`).classList.add('active');
+    const target = document.getElementById(`page-${pageId}`);
+    if (target) target.classList.add('active');
     const header = document.getElementById('main-header');
     if (pageId === 'home') header.classList.remove('-translate-y-full');
     else header.classList.add('-translate-y-full');
@@ -167,36 +141,31 @@ function scrollToSection(id) {
 }
 
 function toggleLoginModal() {
-    document.getElementById('login-modal').classList.toggle('active');
+    const modal = document.getElementById('login-modal');
+    modal.classList.toggle('active');
 }
 
-async function handleGoogleLogin() {
-    if (!supabase) { alert("Supabase not initialized."); return; }
-    const redirectUrl = window.location.origin + window.location.pathname;
-    const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: redirectUrl }
-    });
-    if (error) alert(error.message);
-}
+function handleAuthAction() {
+    const user = document.getElementById('auth-user').value;
+    const pass = document.getElementById('auth-pass').value;
+    const errorEl = document.getElementById('auth-error');
 
-async function handleAuthAction() {
-    const email = document.getElementById('auth-email').value;
-    if (!email.includes('@rgcb.res.in')) { document.getElementById('auth-error').classList.remove('hidden'); return; }
-    if (supabase) {
-        const redirectUrl = window.location.origin + window.location.pathname;
-        const { error } = await supabase.auth.signInWithOtp({ 
-            email,
-            options: { emailRedirectTo: redirectUrl }
-        });
-        if (error) alert(error.message);
-        else alert("Login link sent to " + email + ". Check your inbox!");
+    if (AUTH_USERS[user] && AUTH_USERS[user] === pass) {
+        errorEl.classList.add('hidden');
+        syncUser({ username: user, name: user.charAt(0).toUpperCase() + user.slice(1) });
+        toggleLoginModal();
+    } else {
+        errorEl.classList.remove('hidden');
+        errorEl.innerText = "Invalid credentials. Access Denied.";
     }
 }
 
-async function logout() {
-    if (supabase) await supabase.auth.signOut();
-    State.user = null; State.isAdmin = false; updateAuthUI(); navigateTo('home');
+function logout() {
+    State.user = null;
+    State.isAdmin = false;
+    localStorage.removeItem('petriplan_user');
+    updateAuthUI();
+    navigateTo('home');
 }
 
 function updateAuthUI() {
@@ -210,25 +179,30 @@ function updateAuthUI() {
             <div class="flex items-center gap-4 cursor-pointer group" onclick="logout()">
                 <div class="text-right hidden sm:block">
                     <p class="text-xs font-bold text-white group-hover:text-primary transition-all">${State.user.name}</p>
-                    <p class="text-[9px] text-primary/50 uppercase tracking-[0.3em]">${State.user.role}</p>
+                    <p class="text-[9px] text-primary/50 uppercase tracking-[0.3em]">${State.isAdmin ? 'Admin' : 'Researcher'}</p>
                 </div>
-                <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-white/10 shadow-lg">
-                    ${State.user.avatar.length === 1 ? `<div class="w-full h-full bg-primary flex items-center justify-center text-black font-bold">${State.user.avatar}</div>` : `<img src="${State.user.avatar}" class="w-full h-full object-cover"/>`}
+                <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-white/10 shadow-lg bg-primary flex items-center justify-center text-black font-bold">
+                    ${State.user.name.charAt(0)}
                 </div>
             </div>
         `;
-        if (bookStatus) bookStatus.innerHTML = `<span class="text-primary font-bold">Authenticated:</span> ${State.user.email}`;
+        if (bookStatus) bookStatus.innerHTML = `<span class="text-primary font-bold">Logged In:</span> ${State.user.username}`;
         if (bookBtn) {
             bookBtn.disabled = false;
-            bookBtn.classList.remove('opacity-20', 'cursor-not-allowed', 'bg-white/10', 'text-white/20');
+            bookBtn.classList.remove('opacity-20', 'cursor-not-allowed');
             bookBtn.classList.add('bg-primary', 'text-black');
+            bookBtn.innerText = "Confirm Session";
         }
         if (State.isAdmin && adminPanel) adminPanel.classList.remove('hidden');
         else if (adminPanel) adminPanel.classList.add('hidden');
     } else {
         authBox.innerHTML = `<button onclick="toggleLoginModal()" class="px-6 py-2.5 bg-white/5 border border-white/10 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white/10">Signin</button>`;
         if (bookStatus) bookStatus.innerHTML = `Login to continue`;
-        if (bookBtn) { bookBtn.disabled = true; bookBtn.classList.add('opacity-20'); }
+        if (bookBtn) { 
+            bookBtn.disabled = true; 
+            bookBtn.classList.add('opacity-20');
+            bookBtn.innerText = "Login to Continue";
+        }
     }
 }
 
@@ -276,9 +250,9 @@ function renderFacilitySelector() {
     if (!container) return;
     
     container.innerHTML = labData.facilities.map(f => `
-        <button onclick="selectFacility('${f.id}')" class="flex-1 flex flex-col items-center gap-3 p-6 rounded-[2.5rem] border transition-all ${State.selectedFacility === f.id ? 'bg-primary/20 border-primary shadow-xl shadow-primary/10' : 'bg-white/5 border-white/5 hover:bg-white/10'}">
-            <span class="material-symbols-outlined text-3xl ${State.selectedFacility === f.id ? 'text-primary' : 'text-white/20'}">${f.icon}</span>
-            <span class="text-[11px] font-bold uppercase tracking-widest ${State.selectedFacility === f.id ? 'text-white' : 'text-white/40'}">${f.name}</span>
+        <button onclick="selectFacility('${f.id}')" class="facility-tab-circular ${State.selectedFacility === f.id ? 'active' : ''}">
+            <span class="material-symbols-outlined text-3xl icon">${f.icon}</span>
+            <span class="text-[9px] font-bold uppercase tracking-widest label">${f.name}</span>
         </button>
     `).join('');
 
@@ -287,9 +261,9 @@ function renderFacilitySelector() {
     if (activeFac && activeFac.options) {
         sub.classList.remove('hidden');
         sub.innerHTML = `
-            <div class="flex gap-4 mt-8">
+            <div class="flex gap-4 mt-4 justify-center">
                 ${activeFac.options.map(opt => `
-                    <button onclick="selectSubOption('${opt}')" class="px-8 py-3 rounded-2xl border text-xs font-bold transition-all ${State.selectedSubOption === opt ? 'bg-primary text-black border-primary' : 'bg-white/5 border-white/10 text-white/40 hover:text-white'}">
+                    <button onclick="selectSubOption('${opt}')" class="px-6 py-2 rounded-full border text-[10px] font-bold transition-all ${State.selectedSubOption === opt ? 'bg-primary text-black border-primary shadow-lg' : 'bg-white/5 border-white/10 text-white/40'}">
                         ${opt}
                     </button>
                 `).join('')}
@@ -300,7 +274,7 @@ function renderFacilitySelector() {
     }
 }
 
-// --- CALENDAR & BOOKING (SAME AS BEFORE BUT WITH FACILITY CONTEXT) ---
+// --- CALENDAR & BOOKING ---
 function renderCalendar() {
     const grid = document.getElementById('calendar-view');
     const label = document.getElementById('month-label');
@@ -311,13 +285,20 @@ function renderCalendar() {
     label.innerText = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(State.currentMonth);
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach(d => grid.innerHTML += `<div class="text-[11px] font-bold text-white/20 pb-6 uppercase tracking-widest">${d}</div>`);
+    ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach(d => grid.innerHTML += `<div class="text-[11px] font-bold text-white/20 pb-4 uppercase tracking-widest">${d}</div>`);
     for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div></div>`;
     for (let i = 1; i <= daysInMonth; i++) {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
         const isSelected = State.selectedDate === dateStr;
         const dayBookings = State.bookings.filter(b => b.date === dateStr);
-        grid.innerHTML += `<button onclick="selectDate('${dateStr}')" class="aspect-square flex flex-col items-center justify-center rounded-[1.8rem] text-base transition-all ${isSelected ? 'bg-primary text-black font-bold scale-110 shadow-2xl shadow-primary/30' : 'hover:bg-white/5 text-white/40'}">${i}<div class="flex gap-1 mt-1">${dayBookings.map(b => `<div class="w-1 h-1 rounded-full ${b.user === State.user?.email ? 'bg-primary' : 'bg-white/20'}"></div>`).join('')}</div></button>`;
+        const hasMyBooking = dayBookings.some(b => b.user === State.user?.username);
+        
+        grid.innerHTML += `
+            <button onclick="selectDate('${dateStr}')" class="calendar-day-minimal ${isSelected ? 'selected' : ''} ${hasMyBooking ? 'has-mine' : ''}">
+                ${i}
+                ${dayBookings.length > 0 ? `<div class="dot-indicator"></div>` : ''}
+            </button>
+        `;
     }
 }
 
@@ -337,14 +318,14 @@ function renderDayTimeline() {
     list.innerHTML = '';
     for (let h = 8; h <= 20; h++) {
         list.innerHTML += `
-            <div class="flex gap-6 items-center min-h-[4rem] group">
-                <div class="w-16 text-right text-[10px] font-bold text-white/10 group-hover:text-white/30 transition-all">${h}:00</div>
+            <div class="flex gap-10 items-center min-h-[5rem] group">
+                <div class="w-14 text-right text-[11px] font-bold text-white/10 group-hover:text-white/30 transition-all">${h}:00</div>
                 <div class="flex-1 h-[1px] bg-white/5 relative">
                     ${dayBookings.map(b => {
                         if (Math.floor(b.start / 60) === h) {
-                            const topOffset = (b.start % 60) * (4 / 60); 
-                            const height = (parseFloat(b.duration) * 4);
-                            return `<div class="absolute inset-x-0 rounded-2xl calendar-event z-10 p-4" style="top: ${topOffset - 1}rem; height: ${height}rem"><p class="text-[10px] font-bold text-white truncate">${b.facility_name || 'Reserved'}</p><p class="text-[9px] text-primary/60 font-mono">${b.startStr} - ${b.endStr}</p></div>`;
+                            const topOffset = (b.start % 60) * (5 / 60); 
+                            const height = (parseFloat(b.duration) * 5);
+                            return `<div class="absolute inset-x-0 rounded-2xl calendar-event-vertical z-10 p-5" style="top: ${topOffset}rem; height: ${height}rem"><p class="text-[11px] font-bold text-white truncate flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span> ${b.facility_name}</p><p class="text-[10px] text-white/40 mt-1">${b.startStr} - ${b.endStr}</p></div>`;
                         }
                         return '';
                     }).join('')}
@@ -395,7 +376,7 @@ function updateTimes() {
 
     summary.classList.remove('hidden');
     if (isConflict) {
-        text.innerHTML = `<span class="text-red-500 text-lg">Timeline Overlap Detected</span>`;
+        text.innerHTML = `<span class="text-red-500 text-lg">Overlap Detected</span>`;
         btn.disabled = true;
     } else {
         const facName = activeFac.name + (State.selectedSubOption ? ` (${State.selectedSubOption})` : "");
@@ -404,7 +385,7 @@ function updateTimes() {
     }
 }
 
-async function finalizeBooking() {
+function finalizeBooking() {
     if (!State.user) return toggleLoginModal();
     const startStr = document.getElementById('start-time-pick').value;
     const endStr = document.getElementById('end-time-pick').value;
@@ -419,29 +400,28 @@ async function finalizeBooking() {
         startStr: startStr,
         endStr: endStr,
         duration: durationH,
-        user: State.user.email,
-        user_id: State.user.id,
+        user: State.user.username,
         facility_id: State.selectedFacility,
         facility_name: facName
     };
 
     State.bookings.push(booking);
-    if (supabase) {
-        const { error } = await supabase.from('bookings').insert([booking]);
-        if (error) console.error(error.message);
-    }
+    localStorage.setItem('petriplan_v7_bookings', JSON.stringify(State.bookings));
     
     const btn = document.getElementById('confirm-booking-btn');
     btn.innerText = "Confirmed!";
     btn.classList.replace('bg-primary', 'bg-green-500');
+    
+    // AUTOMATIC UPDATE
+    renderCalendar();
+    renderDayTimeline();
+
     setTimeout(() => {
         btn.innerText = "Confirm Session";
         btn.classList.replace('bg-green-500', 'bg-primary');
-        renderCalendar(); renderDayTimeline();
     }, 800);
 }
 
-// --- TEAM RENDER ---
 function renderTeam() {
     const grid = document.getElementById('team-grid');
     if (!grid) return;
