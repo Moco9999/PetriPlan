@@ -1,6 +1,6 @@
 import './style.css';
 
-/** 
+/**
  * --- SUPABASE CONFIGURATION ---
  * Official credentials for PetriPlan Division Portal
  */
@@ -10,8 +10,8 @@ const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SU
 
 // --- DATA ---
 const labData = {
-    pi: { 
-        name: "Dr. Rakesh S. Laishram", 
+    pi: {
+        name: "Dr. Rakesh S. Laishram",
         title: "PhD, FNASc",
         role: "Scientist F & Swarna Jayanti Fellow",
         bio: "Deciphering the molecular language of RNA processing to heal the failing heart and restore cardiac function."
@@ -164,13 +164,13 @@ function syncUser(supabaseUser) {
     if (!supabaseUser) return;
     const email = supabaseUser.email;
     const metadata = supabaseUser.user_metadata || {};
-    
+
     // STRICT ADMIN CONTROL: Only annmaryjoseph@rgcb.res.in
     const adminEmail = "annmaryjoseph@rgcb.res.in";
-    
-    State.user = { 
-        name: metadata.full_name || email.split('@')[0], 
-        email: email, 
+
+    State.user = {
+        name: metadata.full_name || email.split('@')[0],
+        email: email,
         avatar: metadata.avatar_url || email.charAt(0).toUpperCase(),
         role: email === adminEmail ? 'admin' : 'researcher',
         id: supabaseUser.id
@@ -228,7 +228,7 @@ async function handleAuthAction() {
     if (!email.includes('@rgcb.res.in')) { document.getElementById('auth-error').classList.remove('hidden'); return; }
     if (supabase) {
         const redirectUrl = window.location.origin + window.location.pathname;
-        const { error } = await supabase.auth.signInWithOtp({ 
+        const { error } = await supabase.auth.signInWithOtp({
             email,
             options: { emailRedirectTo: redirectUrl }
         });
@@ -337,7 +337,7 @@ function selectFacility(id) {
 function renderFacilitySelector() {
     const container = document.getElementById('facility-selector');
     if (!container) return;
-    
+
     container.innerHTML = labData.facilities.map(f => `
         <button onclick="selectFacility('${f.id}')" class="flex-1 flex flex-col items-center gap-3 p-6 rounded-[2.5rem] border transition-all ${State.selectedFacility === f.id ? 'border-primary shadow-xl shadow-primary/10' : 'bg-white/5 border-white/5 hover:bg-white/10'}" style="${State.selectedFacility === f.id ? `background-color: ${f.color}20; border-color: ${f.color}` : ''}">
             <span class="material-symbols-outlined text-3xl ${State.selectedFacility === f.id ? '' : 'text-white/20'}" style="${State.selectedFacility === f.id ? `color: ${f.color}` : ''}">${f.icon}</span>
@@ -401,7 +401,7 @@ function renderDayTimeline() {
                 <div class="flex-1 h-[1px] bg-white/5 relative">
                     ${dayBookings.map(b => {
                         if (Math.floor(b.start / 60) === h) {
-                            const topOffset = (b.start % 60) * (4 / 60); 
+                            const topOffset = (b.start % 60) * (4 / 60);
                             const height = (parseFloat(b.duration) * 4);
                             const fac = labData.facilities.find(f => f.id === b.facility_id);
                             const color = fac ? fac.color : '#ffb4ac';
@@ -473,9 +473,9 @@ async function finalizeBooking() {
     const activeFac = labData.facilities.find(f => f.id === State.selectedFacility);
     const facName = activeFac.name + (State.selectedSubOption ? ` (${State.selectedSubOption})` : "");
 
-    const booking = { 
-        date: State.selectedDate, 
-        start: State.selectedStart, 
+    const booking = {
+        date: State.selectedDate,
+        start: State.selectedStart,
         end: State.selectedEnd,
         startStr: startStr,
         endStr: endStr,
@@ -491,7 +491,7 @@ async function finalizeBooking() {
         const { error } = await supabase.from('bookings').insert([booking]);
         if (error) console.error(error.message);
     }
-    
+
     const btn = document.getElementById('confirm-booking-btn');
     btn.innerText = "Confirmed!";
     btn.classList.replace('bg-primary', 'bg-green-500');
