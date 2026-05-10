@@ -1,12 +1,16 @@
 <!DOCTYPE html>
 <html lang="en" class="dark scroll-smooth">
+
 <head>
-    <meta charset="UTF-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta charset="UTF-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>PetriPlan | Cardiovascular RNA Biology Division</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: 'class',
@@ -27,12 +31,14 @@
         };
     </script>
 </head>
+
 <body class="bg-surface text-white selection:bg-primary selection:text-black antialiased">
 
     <!-- Header -->
-    <header id="main-header" class="fixed top-0 z-[60] w-full h-24 px-10 flex justify-between items-center bg-surface/30 backdrop-blur-3xl border-b border-white/5">
+    <header id="main-header"
+        class="fixed top-0 z-[60] w-full h-24 px-10 flex justify-between items-center bg-surface/30 backdrop-blur-3xl border-b border-white/5">
         <div class="flex items-center gap-6">
-            <img src="./public/Petriplan.TransparentLogo.png" class="h-16 w-auto" alt="Logo"/>
+            <img src="./public/Petriplan.TransparentLogo.png" class="h-16 w-auto" alt="Logo" />
             <div class="hidden sm:block">
                 <h1 class="font-headline text-3xl font-bold tracking-tighter text-white">PetriPlan</h1>
                 <p class="text-[9px] text-primary font-bold uppercase tracking-[0.4em]">Cardiovascular RNA Biology</p>
@@ -44,20 +50,27 @@
     </header>
 
     <!-- Login Modal -->
-    <div id="login-modal" class="fixed inset-0 z-[100] hidden items-center justify-center px-6 transition-all duration-300">
+    <div id="login-modal"
+        class="fixed inset-0 z-[100] hidden items-center justify-center px-6 transition-all duration-300">
         <div class="absolute inset-0 bg-black/98 backdrop-blur-3xl" onclick="toggleLoginModal()"></div>
-        <div class="glass-panel w-full max-w-md p-12 rounded-[3.5rem] relative z-10 space-y-10 border-white/10 shadow-2xl">
+        <div
+            class="glass-panel w-full max-w-md p-12 rounded-[3.5rem] relative z-10 space-y-10 border-white/10 shadow-2xl">
             <div class="text-center">
-                <img src="./public/Petriplan.TransparentLogo.png" class="h-16 mx-auto mb-8" alt=""/>
+                <img src="./public/Petriplan.TransparentLogo.png" class="h-16 mx-auto mb-8" alt="" />
                 <h3 class="font-headline text-4xl font-bold text-white tracking-tighter">Sign In</h3>
             </div>
             <div class="space-y-6">
                 <div class="space-y-4">
-                    <input id="auth-user" type="text" placeholder="Username" class="w-full bg-white/[0.03] border border-white/10 rounded-[2rem] px-8 py-5 outline-none focus:border-primary transition-all text-white"/>
-                    <input id="auth-pass" type="password" placeholder="Password" class="w-full bg-white/[0.03] border border-white/10 rounded-[2rem] px-8 py-5 outline-none focus:border-primary transition-all text-white"/>
-                    <p id="auth-error" class="hidden text-center text-[10px] text-red-500 font-bold uppercase tracking-widest">Invalid credentials.</p>
+                    <input id="auth-user" type="text" placeholder="Username"
+                        class="w-full bg-white/[0.03] border border-white/10 rounded-[2rem] px-8 py-5 outline-none focus:border-primary transition-all text-white" />
+                    <input id="auth-pass" type="password" placeholder="Password"
+                        class="w-full bg-white/[0.03] border border-white/10 rounded-[2rem] px-8 py-5 outline-none focus:border-primary transition-all text-white" />
+                    <p id="auth-error"
+                        class="hidden text-center text-[10px] text-red-500 font-bold uppercase tracking-widest">Invalid
+                        credentials.</p>
                 </div>
-                <button onclick="handleAuthAction()" class="w-full py-5 bg-primary text-black font-bold rounded-[2rem] hover:scale-[0.98] transition-all">Continue</button>
+                <button onclick="handleAuthAction()"
+                    class="w-full py-5 bg-primary text-black font-bold rounded-[2rem] hover:scale-[0.98] transition-all">Continue</button>
             </div>
         </div>
     </div>
@@ -66,26 +79,34 @@
         <!-- HOME PAGE -->
         <section id="page-home" class="page active">
             <div class="relative h-screen flex items-center justify-center px-8 overflow-hidden">
-                <div class="absolute inset-0 opacity-5 pointer-events-none" style="background-image: radial-gradient(#ffb4ac 1px, transparent 1px); background-size: 50px 50px;"></div>
+                <div class="absolute inset-0 opacity-5 pointer-events-none"
+                    style="background-image: radial-gradient(#ffb4ac 1px, transparent 1px); background-size: 50px 50px;">
+                </div>
                 <div class="absolute inset-0 flex items-center justify-center z-0">
-                    <img src="./heart.jpg" 
-                         class="h-[75vh] md:h-[90vh] w-auto object-contain heart-beat opacity-80" alt="Heart"/>
+                    <img src="./heart.png" class="h-[75vh] md:h-[90vh] w-auto object-contain heart-beat opacity-80"
+                        alt="Heart" />
                 </div>
                 <div class="relative z-10 text-center space-y-12 max-w-6xl">
-                    <div class="inline-flex items-center gap-5 px-8 py-2.5 rounded-full bg-primary-container/10 border border-primary/20 text-primary font-mono text-[11px] tracking-[0.6em] uppercase backdrop-blur-sm">
+                    <div
+                        class="inline-flex items-center gap-5 px-8 py-2.5 rounded-full bg-primary-container/10 border border-primary/20 text-primary font-mono text-[11px] tracking-[0.6em] uppercase backdrop-blur-sm">
                         Research Infrastructure Hub
                     </div>
-                    <h2 class="font-headline text-6xl md:text-9xl font-bold tracking-tighter text-white leading-none text-glow">
+                    <h2
+                        class="font-headline text-6xl md:text-9xl font-bold tracking-tighter text-white leading-none text-glow">
                         Pulse of <span class="text-primary italic">Life.</span>
                     </h2>
-                    <p class="text-white/60 text-2xl md:text-3xl max-w-4xl mx-auto leading-relaxed font-light text-glow">
-                        Digital management for high-precision RNA research <br class="hidden md:block"/>at the Cardiovascular RNA Biology Division.
+                    <p
+                        class="text-white/60 text-2xl md:text-3xl max-w-4xl mx-auto leading-relaxed font-light text-glow">
+                        Digital management for high-precision RNA research <br class="hidden md:block" />at the
+                        Cardiovascular RNA Biology Division.
                     </p>
                     <div class="flex flex-col sm:flex-row gap-8 justify-center pt-14 pb-24">
-                        <button onclick="navigateTo('booking')" class="bg-primary text-black font-headline text-2xl px-20 py-7 rounded-[2.5rem] hover:scale-105 transition-all shadow-xl font-bold">
+                        <button onclick="navigateTo('booking')"
+                            class="bg-primary text-black font-headline text-2xl px-20 py-7 rounded-[2.5rem] hover:scale-105 transition-all shadow-xl font-bold">
                             Book Lab Slot
                         </button>
-                        <button onclick="scrollToSection('pub-section')" class="px-20 py-7 border border-white/10 bg-white/5 text-white font-headline text-2xl rounded-[2.5rem] hover:bg-white/10 transition-all font-medium backdrop-blur-md">
+                        <button onclick="scrollToSection('pub-section')"
+                            class="px-20 py-7 border border-white/10 bg-white/5 text-white font-headline text-2xl rounded-[2.5rem] hover:bg-white/10 transition-all font-medium backdrop-blur-md">
                             Explore Research
                         </button>
                     </div>
@@ -94,40 +115,51 @@
 
             <!-- PI Section -->
             <section id="team-section" class="py-48 px-10 max-w-7xl mx-auto border-b border-white/5">
-                <div class="relative glass-panel rounded-[3.5rem] p-12 md:p-16 overflow-hidden border-white/5 group shadow-2xl max-w-5xl mx-auto">
+                <div
+                    class="relative glass-panel rounded-[3.5rem] p-12 md:p-16 overflow-hidden border-white/5 group shadow-2xl max-w-5xl mx-auto">
                     <div class="flex flex-col md:flex-row gap-16 items-center relative z-10">
                         <div class="relative shrink-0">
-                            <div class="w-56 h-56 md:w-72 md:h-72 rounded-[3.5rem] border-4 border-white/10 overflow-hidden shadow-2xl relative z-10 bg-surface">
-                                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTv32toqqsIiEAbFe_LeClYqTm0JNgZAoqXHie2-kSl5VclXLZuj3G-r79r2QFgtJiWOPac&s" 
-                                     class="w-full h-full object-cover object-top scale-110" alt="Dr. Rakesh S. Laishram"/>
+                            <div
+                                class="w-56 h-56 md:w-72 md:h-72 rounded-[3.5rem] border-4 border-white/10 overflow-hidden shadow-2xl relative z-10 bg-surface">
+                                <img src="https://rgcb.res.in/images/faculty-dir-large/2026/laishram.jpg" class="w-full h-full object-cover object-top scale-110"
+                                    alt="Dr. Rakesh S. Laishram" />
                             </div>
                         </div>
                         <div class="space-y-8 text-center md:text-left flex-1">
                             <div class="space-y-3">
                                 <div class="flex flex-wrap justify-center md:justify-start gap-3 mb-2">
-                                    <span class="px-3 py-1 bg-primary text-black text-[10px] font-bold rounded-full uppercase tracking-widest">Principal Investigator</span>
-                                    <span class="px-3 py-1 bg-white/10 text-white/50 text-[10px] font-bold rounded-full uppercase tracking-widest">FNASC</span>
+                                    <span
+                                        class="px-3 py-1 bg-primary text-black text-[10px] font-bold rounded-full uppercase tracking-widest">Principal
+                                        Investigator</span>
+                                    <span
+                                        class="px-3 py-1 bg-white/10 text-white/50 text-[10px] font-bold rounded-full uppercase tracking-widest">FNASC</span>
                                 </div>
-                                <h3 class="font-headline text-5xl md:text-6xl font-bold text-white tracking-tight leading-tight">Dr. Rakesh S.<br/>Laishram</h3>
-                                <p class="text-primary font-headline text-xl md:text-2xl font-medium tracking-tight">Scientist F • Swarna Jayanti Fellow</p>
+                                <h3
+                                    class="font-headline text-5xl md:text-6xl font-bold text-white tracking-tight leading-tight">
+                                    Dr. Rakesh S.<br />Laishram</h3>
+                                <p class="text-primary font-headline text-xl md:text-2xl font-medium tracking-tight">
+                                    Scientist F • Swarna Jayanti Fellow</p>
                             </div>
                             <p class="text-xl text-white/40 leading-relaxed max-w-2xl font-light italic">
                                 "Deciphering the molecular code of RNA to restore heart health."
                             </p>
-                            
+
                             <div class="flex flex-col sm:flex-row justify-center md:justify-start gap-12 pt-4">
                                 <div>
-                                    <p class="text-[9px] font-bold text-white/30 uppercase tracking-[0.4em] mb-2">Division</p>
+                                    <p class="text-[9px] font-bold text-white/30 uppercase tracking-[0.4em] mb-2">
+                                        Division</p>
                                     <p class="text-sm font-bold text-white italic">Cardiovascular RNA Biology</p>
                                 </div>
                                 <div>
-                                    <p class="text-[9px] font-bold text-white/30 uppercase tracking-[0.4em] mb-2">Location</p>
+                                    <p class="text-[9px] font-bold text-white/30 uppercase tracking-[0.4em] mb-2">
+                                        Location</p>
                                     <p class="text-sm font-bold text-white">Unit A-12, RGCB</p>
                                 </div>
                             </div>
-                            
+
                             <div class="pt-6">
-                                <a href="https://rgcb.res.in/rakesh" target="_blank" class="inline-flex items-center gap-2 text-primary text-sm font-bold hover:text-white transition-all">
+                                <a href="https://rgcb.res.in/rakesh" target="_blank"
+                                    class="inline-flex items-center gap-2 text-primary text-sm font-bold hover:text-white transition-all">
                                     Biography <span class="material-symbols-outlined text-sm">open_in_new</span>
                                 </a>
                             </div>
@@ -150,7 +182,8 @@
             <section id="pub-section" class="py-48 px-10 bg-white/[0.01]">
                 <div class="max-w-7xl mx-auto">
                     <div class="text-center mb-24 space-y-4">
-                        <h2 class="font-headline text-6xl font-bold text-white tracking-tighter">Major Publications.</h2>
+                        <h2 class="font-headline text-6xl font-bold text-white tracking-tighter">Major Publications.
+                        </h2>
                     </div>
                     <div id="pub-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <!-- Injected -->
@@ -162,10 +195,13 @@
         <!-- BOOKING PAGE (VERTICAL STACK DESIGN) -->
         <section id="page-booking" class="page px-6 md:px-12 py-32 md:py-40 max-w-3xl mx-auto min-h-screen">
             <header class="mb-20 space-y-8">
-                <button onclick="navigateTo('home')" class="text-white/30 hover:text-white transition-all flex items-center gap-4 text-xs font-bold uppercase tracking-[0.6em]">
+                <button onclick="navigateTo('home')"
+                    class="text-white/30 hover:text-white transition-all flex items-center gap-4 text-xs font-bold uppercase tracking-[0.6em]">
                     <span class="material-symbols-outlined text-sm">west</span> Back to Hub
                 </button>
-                <h2 class="font-headline text-5xl md:text-7xl font-bold text-white leading-none tracking-tighter whitespace-nowrap">Lab <span class="text-primary italic">Booking.</span></h2>
+                <h2
+                    class="font-headline text-5xl md:text-7xl font-bold text-white leading-none tracking-tighter whitespace-nowrap">
+                    Lab <span class="text-primary italic">Booking.</span></h2>
             </header>
 
             <div class="space-y-20">
@@ -184,12 +220,18 @@
                 <div class="glass-panel rounded-[4rem] p-12 md:p-16 space-y-16">
                     <div class="flex justify-between items-center">
                         <div class="space-y-2">
-                            <h3 id="month-label" class="font-headline text-5xl md:text-6xl font-bold text-white tracking-tighter"></h3>
-                            <p class="text-primary/50 font-mono text-[9px] uppercase tracking-[0.4em]">Unit Availability</p>
+                            <h3 id="month-label"
+                                class="font-headline text-5xl md:text-6xl font-bold text-white tracking-tighter"></h3>
+                            <p class="text-primary/50 font-mono text-[9px] uppercase tracking-[0.4em]">Unit Availability
+                            </p>
                         </div>
                         <div class="flex gap-4">
-                            <button onclick="changeMonth(-1)" class="p-5 bg-white/5 hover:bg-primary/10 rounded-full border border-white/5 transition-all"><span class="material-symbols-outlined">navigate_before</span></button>
-                            <button onclick="changeMonth(1)" class="p-5 bg-white/5 hover:bg-primary/10 rounded-full border border-white/5 transition-all"><span class="material-symbols-outlined">navigate_next</span></button>
+                            <button onclick="changeMonth(-1)"
+                                class="p-5 bg-white/5 hover:bg-primary/10 rounded-full border border-white/5 transition-all"><span
+                                    class="material-symbols-outlined">navigate_before</span></button>
+                            <button onclick="changeMonth(1)"
+                                class="p-5 bg-white/5 hover:bg-primary/10 rounded-full border border-white/5 transition-all"><span
+                                    class="material-symbols-outlined">navigate_next</span></button>
                         </div>
                     </div>
                     <div id="calendar-view" class="grid grid-cols-7 gap-4 md:gap-6 text-center">
@@ -201,8 +243,10 @@
                 <div id="day-detail-container" class="glass-panel rounded-[4rem] p-12 md:p-16 hidden fade-in-smooth">
                     <div class="flex justify-between items-center mb-16 border-b border-white/5 pb-10">
                         <div class="space-y-2">
-                            <h3 id="detail-date-label" class="font-headline text-4xl md:text-5xl font-bold text-white tracking-tighter"></h3>
-                            <p class="text-primary/50 font-mono text-[9px] uppercase tracking-[0.5em]">Session Planning</p>
+                            <h3 id="detail-date-label"
+                                class="font-headline text-4xl md:text-5xl font-bold text-white tracking-tighter"></h3>
+                            <p class="text-primary/50 font-mono text-[9px] uppercase tracking-[0.5em]">Session Planning
+                            </p>
                         </div>
                         <div id="book-status-box" class="text-[9px] font-bold uppercase text-white/20 tracking-widest">
                             Login to continue
@@ -221,24 +265,30 @@
                                 <h4 class="font-headline text-3xl font-bold text-white">Set Window</h4>
                                 <div class="space-y-6">
                                     <div class="space-y-2">
-                                        <p class="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Start Time</p>
-                                        <input id="start-time-pick" type="time" onchange="updateTimes()" class="w-full bg-white/5 border border-white/10 rounded-3xl px-8 py-5 text-white text-2xl outline-none focus:border-primary transition-all"/>
+                                        <p class="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">Start
+                                            Time</p>
+                                        <input id="start-time-pick" type="time" onchange="updateTimes()"
+                                            class="w-full bg-white/5 border border-white/10 rounded-3xl px-8 py-5 text-white text-2xl outline-none focus:border-primary transition-all" />
                                     </div>
                                     <div class="space-y-2">
-                                        <p class="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">End Time</p>
-                                        <input id="end-time-pick" type="time" onchange="updateTimes()" class="w-full bg-white/5 border border-white/10 rounded-3xl px-8 py-5 text-white text-2xl outline-none focus:border-primary transition-all"/>
+                                        <p class="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">End
+                                            Time</p>
+                                        <input id="end-time-pick" type="time" onchange="updateTimes()"
+                                            class="w-full bg-white/5 border border-white/10 rounded-3xl px-8 py-5 text-white text-2xl outline-none focus:border-primary transition-all" />
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div id="booking-summary" class="hidden animate-in zoom-in-95 duration-300">
                                 <div class="p-8 bg-primary/5 border border-primary/20 rounded-[2.5rem] space-y-4">
-                                    <p class="text-[10px] font-bold text-primary uppercase tracking-[0.5em]">Session Review</p>
+                                    <p class="text-[10px] font-bold text-primary uppercase tracking-[0.5em]">Session
+                                        Review</p>
                                     <p id="summary-text" class="text-2xl font-bold text-white leading-tight"></p>
                                 </div>
                             </div>
 
-                            <button id="confirm-booking-btn" onclick="finalizeBooking()" class="w-full py-8 bg-white/5 text-white/20 font-bold rounded-[2.5rem] transition-all text-xl uppercase tracking-widest">
+                            <button id="confirm-booking-btn" onclick="finalizeBooking()"
+                                class="w-full py-8 bg-white/5 text-white/20 font-bold rounded-[2.5rem] transition-all text-xl uppercase tracking-widest">
                                 Confirm Session
                             </button>
                         </div>
@@ -247,14 +297,16 @@
 
                 <!-- STATUS SIDEBAR (BOTTOM IN VERTICAL STACK) -->
                 <div class="glass-panel rounded-[4rem] p-12 md:p-16 space-y-10">
-                    <h3 class="font-headline text-4xl font-bold text-white">Lab <span class="text-primary italic">Status.</span></h3>
+                    <h3 class="font-headline text-4xl font-bold text-white">Lab <span
+                            class="text-primary italic">Status.</span></h3>
                     <div class="p-8 bg-white/[0.02] border border-white/5 rounded-[2.5rem] space-y-6">
                         <div class="flex items-center gap-4">
                             <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
                             <p class="text-xs font-bold text-white uppercase tracking-widest">Active Units</p>
                         </div>
                         <p class="text-sm text-white/40 leading-relaxed font-light">
-                            All research units (Cell, Bacterial, PCR) are currently operational. Please adhere to sterilization protocols.
+                            All research units (Cell, Bacterial, PCR) are currently operational. Please adhere to
+                            sterilization protocols.
                         </p>
                     </div>
                 </div>
@@ -263,7 +315,7 @@
     </main>
 
     <footer class="py-32 text-center border-t border-white/5 bg-surface mt-32">
-        <img src="./public/Petriplan.TransparentLogo.png" class="h-16 mx-auto mb-14 opacity-30" alt=""/>
+        <img src="./public/Petriplan.TransparentLogo.png" class="h-16 mx-auto mb-14 opacity-30" alt="" />
         <div class="space-y-6">
             <p class="text-base font-bold text-white/15 uppercase tracking-[0.8em]">
                 &copy; 2026 PetriPlan • Cardiovascular RNA Biology Division
@@ -274,4 +326,5 @@
 
     <script type="module" src="/src/main.js"></script>
 </body>
+
 </html>
