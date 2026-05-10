@@ -437,7 +437,8 @@ function updateTimes() {
         if (text) text.innerHTML = `<span class="text-red-500 text-lg">Occupied (${activeFac.name})</span>`;
         if (btn) btn.disabled = true;
     } else {
-        if (text) text.innerText = `${activeFac.name}: ${startStr} - ${endStr}`;
+        const durationH = ((endTotal - startTotal) / 60).toFixed(1);
+        if (text) text.innerText = `${activeFac.name}: ${startStr} - ${endStr} [for ${durationH} hr]`;
         if (btn) btn.disabled = !State.user;
     }
 }
